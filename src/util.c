@@ -10,8 +10,7 @@ typedef signed char int8;
 #define VERTICAL_STEP 10
 #define KNIGHT_MOVES 8
 
-
-enum pieces {pawn = 1, knight, bishop, rook, queen, king}; 
+enum pieces { PAWN = 1, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 #define PIECE_TYPE 7
 #define COLOR_MASK 060
 #define WHITE 020
@@ -30,24 +29,28 @@ enum pieces {pawn = 1, knight, bishop, rook, queen, king};
 
 /*#define WHITE_PAWN_START 3*/
 /*#define BLACK_PAWN_START 8*/
-const int8 knightMoves[] = {-WIDTH + 2, -WIDTH - 2, -2 * WIDTH + 1, -2 * WIDTH - 1, WIDTH - 2, WIDTH + 2, 2 * WIDTH + 1, 2 * WIDTH - 1};
-const int8 bishopMoves[] = {-WIDTH + 1, WIDTH - 1, -WIDTH - 1, WIDTH + 1};
-const int8 rookMoves[] = {-1, 1, -WIDTH, WIDTH};
-const int8 kingMoves[] = {-1, 1, -WIDTH + 1, WIDTH - 1, -WIDTH, WIDTH, -WIDTH - 1, WIDTH + 1};
+const int8 knightMoves[]
+    = { -WIDTH + 2, -WIDTH - 2, -2 * WIDTH + 1, -2 * WIDTH - 1,
+        WIDTH - 2,  WIDTH + 2,  2 * WIDTH + 1,  2 * WIDTH - 1 };
+const int8 bishopMoves[] = { -WIDTH + 1, WIDTH - 1, -WIDTH - 1, WIDTH + 1 };
+const int8 rookMoves[] = { -1, 1, -WIDTH, WIDTH };
+const int8 kingMoves[]
+    = { -1, 1, -WIDTH + 1, WIDTH - 1, -WIDTH, WIDTH, -WIDTH - 1, WIDTH + 1 };
 
-#define EDGE WHITE|BLACK
-
+#define EDGE WHITE | BLACK
+// clang-format off
 #define STARTING_POS {\
     EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
     EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
-    EDGE, 36, 34, 35, 37, 38, 35, 34, 36, EDGE, \
-    EDGE, 33, 33, 33, 33, 33, 33, 33, 33, EDGE, \
-    EDGE, 0, 0, 0, 0, 0, 0, 0, 0, EDGE, \
-    EDGE, 0, 0, 0, 0, 0, 0, 0, 0, EDGE, \
-    EDGE, 0, 0, 0, 0, 0, 0, 0, 0, EDGE, \
-    EDGE, 0, 0, 0, 0, 0, 0, 0, 0, EDGE, \
-    EDGE, 17, 17, 17, 17, 17, 17, 17, 17, EDGE, \
-    EDGE, 20, 18, 19, 21, 22, 19, 18, 20, EDGE, \
+    EDGE, 20,   18,   19,   21,   22,   19,   18,   20,   EDGE, \
+    EDGE, 17,   17,   17,   17,   17,   17,   17,   17,   EDGE, \
+    EDGE, 0,    0,    0,    0,    0,    0,    0,    0,    EDGE, \
+    EDGE, 0,    0,    0,    0,    0,    0,    0,    0,    EDGE, \
+    EDGE, 0,    0,    0,    0,    0,    0,    0,    0,    EDGE, \
+    EDGE, 0,    0,    0,    0,    0,    0,    0,    0,    EDGE, \
+    EDGE, 33,   33,   33,   33,   33,   33,   33,   33,   EDGE, \
+    EDGE, 36,   34,   35,   37,   38,   35,   34,   36,   EDGE, \
     EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
     EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
 }
+// clang-format on
