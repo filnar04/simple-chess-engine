@@ -20,15 +20,14 @@ enum pieces { PAWN = 1, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 #define HAS_MOVED 010
 #define CLEAR_TYPE 0xf8
 
-#define GAMESTATE_MEM_SIZE 8
-#define KING_POS_W 0
-#define KING_POS_B 1
-#define SHORTCASTLE_W 2
-#define SHORTCASTLE_B 3
-#define LONGCASTLE_W 4
-#define LONGCASTLE_B 5
-#define ENPASSANT_POS 6
-#define HALFMOVE_CLOCK 7
+struct gamestate {
+    int8 kingW;
+    int8 kingB;
+    int8 shortcastle;
+    int8 longcastle;
+    int8 enpasssant;
+    int8 halfmove;
+};
 
 /*#define WHITE_PAWN_START 3*/
 /*#define BLACK_PAWN_START 8*/
