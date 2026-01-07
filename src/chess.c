@@ -192,8 +192,10 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
             if (!(testCheck (board, pos + 2, color)
                   || testCheck (board, pos + 1, color)))
                 list[moveCount++] = pos + 2;
-            for (int i = 0; i < 4; i++)
-                board[pos + i] = board[pos + i];
+            board[pos] = board[pos + 2];
+            board[pos + 2] = 0;
+            board[pos + 3] = board[pos + 1];
+            board[pos + 1] = board[pos + 3];
         }
     }
     if (gameState.longcastle & color) {
@@ -207,8 +209,10 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
             if (!(testCheck (board, pos - 2, color)
                   || testCheck (board, pos - 1, color)))
                 list[moveCount++] = pos - 2;
-            for (int i = 0; i >= -4; i--)
-                board[pos + i] = board[pos + i];
+            board[pos] = board[pos - 2];
+            board[pos - 2] = 0;
+            board[pos - 4] = board[pos - 1];
+            board[pos - 1] = 0;
         }
     }
     return moveCount;
