@@ -8,47 +8,57 @@ int8 currentBoard[120] = STARTING_POS;
 int8
 testCheck (int8 *board, int8 pos, int8 color)
 {
-    int8 attack_num = 0, attack_pos = WIDTH;
-    if (color == WHITE) attack_pos = -WIDTH;
-    attack_pos += pos + 1;
+    int8 attack_num = 0, attack_pos = VERTICAL_STEP;
+    if (color == BLACK) attack_pos = -VERTICAL_STEP;
+    attack_pos += pos + HORIZONTAL_STEP;
     // test if attacked by pawn
     if (!(board[attack_pos] & color)
-        && (board[attack_pos] | PIECE_TYPE) == PAWN) {
+        && (board[attack_pos] & PIECE_TYPE) == PAWN) {
         attack_num++;
-    } else if (!(board[attack_pos - 2] & color)
-               && (board[attack_pos - 2] & PIECE_TYPE) == PAWN) {
+    }
+    if (!(board[attack_pos - 2] & color)
+        && (board[attack_pos - 2] & PIECE_TYPE) == PAWN) {
         attack_num++;
-    } else { // it's impossible to be checked by a pawn and another piece at
-             // the same time
-        for (int i = 0; i < KNIGHT_MOVES; i++) {
-            attack_pos = pos + knightMoves[i];
-            if ((board[attack_pos] & PIECE_TYPE) == KNIGHT
-                && !(board[attack_pos] & color)) {
-                attack_num++;
-                break;
-            }
+    } // nevermind, I'm stupid
+
+    for (int i = 0; i < KNIGHT_MOVES; i++) {
+        attack_pos = pos + knightMoves[i];
+        if ((board[attack_pos] & PIECE_TYPE) == KNIGHT
+            && !(board[attack_pos] & color)) {
+            attack_num++;
+            break;
         }
-        for (int i = 0; i < 4; i++) {
-            do {
-                attack_pos = pos + bishopMoves[i];
-            } while (!board[attack_pos]);
-            int8 piece = board[attack_pos] | PIECE_TYPE;
-            if ((board[attack_pos] & color)
-                && (piece == BISHOP || piece == QUEEN)) {
-                attack_num++;
-                break;
-            }
+    }
+    for (int i = 0; i < 4; i++) {
+        attack_pos = pos + bishopMoves[i];
+        while (!board[attack_pos]) {
+            attack_pos += bishopMoves[i];
         }
-        for (int i = 0; i < 4; i++) {
-            do {
-                attack_pos = pos + rookMoves[i];
-            } while (!board[attack_pos]);
-            int8 piece = board[attack_pos] | PIECE_TYPE;
-            if ((board[attack_pos] & color)
-                && (piece == ROOK || piece == QUEEN)) {
-                attack_num++;
-                break;
-            }
+        int8 piece = board[attack_pos] & PIECE_TYPE;
+        if (!(board[attack_pos] & color)
+            && (piece == BISHOP || piece == QUEEN)) {
+            attack_num++;
+            break;
+        }
+    }
+    for (int i = 0; i < 4; i++) {
+        attack_pos = pos + rookMoves[i];
+        while (!board[attack_pos]) {
+            attack_pos += rookMoves[i];
+        }
+        int8 piece = board[attack_pos] & PIECE_TYPE;
+        if (!(board[attack_pos] & color)
+            && (piece == ROOK || piece == QUEEN)) {
+            attack_num++;
+            break;
+        }
+    }
+    for (int i = 0; i < 8; i++) {
+        attack_pos = pos + kingMoves[i];
+        int8 piece = board[attack_pos] & PIECE_TYPE;
+        if (!(board[attack_pos] & color) && piece == KING) {
+            attack_num++;
+            break;
         }
     }
 
@@ -63,7 +73,8 @@ testCheck (int8 *board, int8 pos, int8 color)
         next += step;                                                         \
     }                                                                         \
     if (!(board[next] & color)                                                \
-        && (board[next] == type || board[next] == QUEEN))                     \
+        && ((board[next] & PIECE_TYPE) == type                                \
+            || (board[next] & PIECE_TYPE) == QUEEN))                          \
         return 1;
 
 int8
@@ -72,15 +83,19 @@ isPinned (int8 *board, int8 pos, int8 kingPos)
     int8 next, color = board[pos] & COLOR_MASK;
     if (ranks[pos] == ranks[kingPos]) {
         testPin (board, pos, kingPos, color, 1, ROOK)
+        // return 1;
     }
     if (files[pos] == files[kingPos]) {
         testPin (board, pos, kingPos, color, VERTICAL_STEP, ROOK)
+        // return 1;
     }
     if (diagonals1[pos] == diagonals1[kingPos]) {
         testPin (board, pos, kingPos, color, VERTICAL_STEP + 1, BISHOP)
+        // return 1;
     }
     if (diagonals2[pos] == diagonals2[kingPos]) {
         testPin (board, pos, kingPos, color, VERTICAL_STEP - 1, BISHOP)
+        // return 1;
     }
     return 0;
 }
@@ -101,8 +116,8 @@ findPawnMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
         || gameState.enpasssant == next)
         list[moveCount++] = next;
     next -= 2;
-    if ((board[next] && !(board[next] & color)
-         || gameState.enpasssant == next))
+    if ((board[next] && !(board[next] & color))
+        || gameState.enpasssant == next)
         list[moveCount++] = next;
     return moveCount;
 }
@@ -161,12 +176,15 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
             if (!testCheck (board, next, color)) {
                 list[moveCount++] = next;
             }
+            board[pos] = board[next];
             board[next] = temp;
         }
     }
     // TODO: do something with this mess
     if (gameState.shortcastle & color) {
-        if (!(board[pos + 1]) && !board[pos + 2]) {
+        if (!(board[pos + 1]) && !board[pos + 2]
+            && (board[pos + 3] & (PIECE_TYPE | HAS_MOVED)) == ROOK
+            && (board[pos + 3] & color)) {
             board[pos + 2] = board[pos];
             board[pos] = 0;
             board[pos + 1] = board[pos + 3];
@@ -179,7 +197,9 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
         }
     }
     if (gameState.longcastle & color) {
-        if (!(board[pos - 1]) && !(board[pos - 2] && !(board[pos - 3]))) {
+        if (!(board[pos - 1]) && !(board[pos - 2]) && !(board[pos - 3])
+            && (board[pos - 4] & (PIECE_TYPE | HAS_MOVED)) == ROOK
+            && (board[pos - 4] & color)) {
             board[pos - 2] = board[pos];
             board[pos] = 0;
             board[pos - 1] = board[pos - 4];
@@ -191,30 +211,34 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
                 board[pos + i] = board[pos + i];
         }
     }
-
     return moveCount;
 }
 
 void
-makeMove (int8 *board, struct gamestate gameState, int8 start, int8 end,
+makeMove (int8 *board, struct gamestate *gameState, int8 start, int8 end,
           int8 promotion)
 {
     int8 color = board[start] & COLOR_MASK;
-    gameState.halfmove += 1;
+    gameState->halfmove += 1;
+    gameState->enpasssant = 0;
     if ((board[start] & PIECE_TYPE) == PAWN) {
-        gameState.halfmove = 0;
+        gameState->halfmove = 0;
         if (promotion > 0) {
-            board[end] = (board[start] & CLEAR_TYPE) | promotion | HAS_MOVED;
+            board[end] = promotion | color; //| HAS_MOVED;
             board[start] = 0;
             return;
         }
         if (abs (end - start) == 2 * WIDTH) {
-            gameState.enpasssant = ((short)end + start) / 2;
+            gameState->enpasssant = ((short)end + start) / 2;
         }
 
     } else if ((board[start] & PIECE_TYPE) == KING) {
-        gameState.shortcastle &= ~color;
-        gameState.longcastle &= ~color;
+        if (color == WHITE)
+            gameState->kingW = end;
+        else
+            gameState->kingB = end;
+        gameState->shortcastle &= ~color;
+        gameState->longcastle &= ~color;
         if (end - start == 2) { // short castle
             board[start + 1] = board[end + 1] | HAS_MOVED;
             board[end + 1] = 0;
@@ -223,20 +247,78 @@ makeMove (int8 *board, struct gamestate gameState, int8 start, int8 end,
             board[end - 2] = 0;
         }
     }
-    if (board[end]) gameState.halfmove = 0;
+    if (board[end]) gameState->halfmove = 0;
     board[end] = board[start] | HAS_MOVED;
     board[start] = 0;
 }
+
+unsigned int
+findPieceMoves (int8 *board, struct gamestate gameState, int8 square,
+                int8 inCheck, int8 *moveList)
+{
+    unsigned int numMoves;
+    int8 tempMoveList[30];
+    int8 color = board[square] & COLOR_MASK;
+    int8 type = board[square] & PIECE_TYPE;
+    switch (type) {
+    case PAWN:
+        numMoves
+            = findPawnMoves (board, gameState, square, color, tempMoveList);
+        break;
+    case KNIGHT:
+        numMoves = findKnightMoves (board, square, color, tempMoveList);
+        break;
+    case BISHOP:
+        numMoves = findBishopMoves (board, square, color, tempMoveList);
+        break;
+    case ROOK:
+        numMoves = findRookMoves (board, square, color, tempMoveList);
+        break;
+    case QUEEN:
+        numMoves = findQueenMoves (board, square, color, tempMoveList);
+        break;
+    case KING:
+        numMoves
+            = findKingMoves (board, gameState, square, color, tempMoveList);
+        break;
+    // Should never happen
+    default:
+        printf ("Wrong piece type: %d at (%d)", board[square] & PIECE_TYPE,
+                square);
+        exit (EXIT_FAILURE);
+    }
+    if (numMoves == 0) return 0;
+
+    int8 kingPos = (color == WHITE) ? gameState.kingW : gameState.kingB;
+    int8 pinned = isPinned (board, square, kingPos);
+    int8 numLegal = 0;
+    if (inCheck || pinned) {
+        for (int i = 0; i < numMoves; i++) {
+            int8 tmp = board[tempMoveList[i]];
+            board[tempMoveList[i]] = board[square];
+            board[square] = 0;
+            int8 tmpKingPos = (type == KING) ? tempMoveList[i] : kingPos;
+            if (testCheck (board, tmpKingPos, color) == 0) {
+                moveList[numLegal++] = tempMoveList[i];
+            } else {
+                ; // printf ("can't move! %d->%d\n", square, tempMoveList[i]);
+            }
+            board[square] = board[tempMoveList[i]];
+            board[tempMoveList[i]] = tmp;
+        }
+    } else {
+        numLegal = numMoves;
+        memcpy (moveList, tempMoveList, numLegal);
+    }
+    return numLegal;
+}
+
 unsigned int
 searchMoves (int8 *board, struct gamestate gameState, int8 color,
              int8 *moveList, int8 *pieceList)
 {
-    int8 kingPos;
-    if (color == WHITE)
-        kingPos = gameState.kingW;
-    else
-        kingPos = gameState.kingB;
-    int8 attackerNum = testCheck (board, kingPos, color), tempMoveList[30];
+    int8 kingPos = (color == WHITE) ? gameState.kingW : gameState.kingB;
+    int8 attackerNum = testCheck (board, kingPos, color);
     unsigned int moveCount = 0;
 
     if (attackerNum > 1) {
@@ -244,90 +326,32 @@ searchMoves (int8 *board, struct gamestate gameState, int8 color,
         pieceList[0] = kingPos;
         return findKingMoves (board, gameState, kingPos, color, moveList);
     }
+    int8 promotionRank = (color == WHITE) ? WHITE_PROMOTION : BLACK_PROMOTION;
     for (int r = 1; r <= 8; r++) {
         for (int c = 1; c <= 8; c++) {
-            int8 pos = WIDTH * (r + 1) + c;
-            int8 piece = board[pos];
+            int8 square = WIDTH * (r + 1) + c;
+            int8 piece = board[square];
             if (!(piece & color)) continue;
-            int8 pinned = isPinned (board, pos, kingPos);
-            int8 numMoves = 0, promotionRank = 0;
+            int8 numMoves = 0;
+            int8 *currMoveList = moveList + moveCount;
 
-            // pieceList[0] = pos;
-            switch (piece & PIECE_TYPE) {
-            case PAWN:
-                numMoves = findPawnMoves (board, gameState, pos, color,
-                                          tempMoveList);
-                if (color == WHITE)
-                    promotionRank = WHITE_PROMOTION;
-                else
-                    promotionRank = BLACK_PROMOTION;
-                break;
-            case KNIGHT:
-                numMoves = findKnightMoves (board, pos, color, tempMoveList);
-                break;
-            case BISHOP:
-                numMoves = findBishopMoves (board, pos, color, tempMoveList);
-                break;
-            case ROOK:
-                numMoves = findRookMoves (board, pos, color, tempMoveList);
-                break;
-            case QUEEN:
-                numMoves = findQueenMoves (board, pos, color, tempMoveList);
-                break;
-            case KING:
-                numMoves = findKingMoves (board, gameState, pos, color,
-                                          tempMoveList);
-                break;
-            // Should never happen
-            default:
-                printf ("Wrong piece type: %d at (%c %d)", piece & PIECE_TYPE,
-                        'a' + c - 1, r);
-                exit (EXIT_FAILURE);
-            }
+            numMoves = findPieceMoves (board, gameState, square, attackerNum,
+                                       currMoveList);
             if (numMoves == 0) continue;
-            // TODO: split this mess into more functions
-            if (attackerNum || pinned) {
-                int8 legalNum = 0;
+            pieceList[moveCount] = square;
+            if ((piece & PIECE_TYPE) == PAWN
+                && ranks[currMoveList[0]] == promotionRank) {
+                int8 temp[3];
+                memcpy (temp, moveList, numMoves);
                 for (int i = 0; i < numMoves; i++) {
-                    int8 tmp = board[tempMoveList[i]];
-                    board[tempMoveList[i]] = board[pos];
-                    board[pos] = 0;
-
-                    if (!testCheck (board, kingPos, color)) {
-
-                        moveList[moveCount + legalNum] = tempMoveList[i];
-                        legalNum++;
-                        // pawn promotion
-                        if ((piece & PIECE_TYPE) == PAWN
-                            && ranks[tempMoveList[i]] == promotionRank) {
-                            for (int j = 0; j < 3; j++) {
-                                pieceList[moveCount + legalNum] = KNIGHT + j;
-                                moveList[moveCount + legalNum]
-                                    = tempMoveList[i];
-                                legalNum++;
-                            }
-                        }
+                    moveList[moveCount++] = temp[i];
+                    for (int j = 0; j < 3; j++) { // underpromotion
+                        pieceList[moveCount] = KNIGHT + j;
+                        moveList[moveCount++] = temp[i];
                     }
-                    board[pos] = board[tempMoveList[i]];
-                    board[tempMoveList[i]] = tmp;
                 }
-                moveCount += legalNum;
-                if (legalNum > 0) pieceList[moveCount] = pos;
             } else {
-                pieceList[moveCount] = pos;
-                if ((piece & PIECE_TYPE) == PAWN
-                    && ranks[tempMoveList[0]] == promotionRank) {
-                    for (int i = 0; i < numMoves; i++) {
-                        moveList[moveCount++] = tempMoveList[i];
-                        for (int j = 0; j < 3; j++) {
-                            pieceList[moveCount] = KNIGHT + j;
-                            moveList[moveCount++] = tempMoveList[i];
-                        }
-                    }
-                } else {
-                    memcpy (moveList + moveCount, tempMoveList, numMoves);
-                    moveCount += numMoves;
-                }
+                moveCount += numMoves;
             }
         }
     }
