@@ -1,3 +1,5 @@
+#pragma once
+
 typedef signed char int8;
 
 #define WIDTH 10
@@ -21,6 +23,7 @@ enum pieces { PAWN = 1, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 #define CLEAR_TYPE 0xf8
 
 struct gamestate {
+    int8 turn;
     int8 kingW;
     int8 kingB;
     int8 shortcastle;
@@ -29,8 +32,8 @@ struct gamestate {
     int8 halfmove;
 };
 
-/*#define WHITE_PAWN_START 3*/
-/*#define BLACK_PAWN_START 8*/
+#define WHITE_PAWN_START 2
+#define BLACK_PAWN_START 7
 const int8 knightMoves[]
     = { -WIDTH + 2, -WIDTH - 2, -2 * WIDTH + 1, -2 * WIDTH - 1,
         WIDTH - 2,  WIDTH + 2,  2 * WIDTH + 1,  2 * WIDTH - 1 };
@@ -39,7 +42,7 @@ const int8 rookMoves[] = { -1, 1, -WIDTH, WIDTH };
 const int8 kingMoves[]
     = { -1, 1, -WIDTH + 1, WIDTH - 1, -WIDTH, WIDTH, -WIDTH - 1, WIDTH + 1 };
 
-#define EDGE WHITE | BLACK
+#define EDGE (WHITE | BLACK)
 // clang-format off
 #define STARTING_POS {\
     EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
@@ -55,7 +58,20 @@ const int8 kingMoves[]
     EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
     EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
 }
-
+#define EMPTY_BOARD {\
+    EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
+    EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
+    EDGE, 0,    0,    0,    0,    0,    0,    0,    0,    EDGE, \
+    EDGE, 0,    0,    0,    0,    0,    0,    0,    0,    EDGE, \
+    EDGE, 0,    0,    0,    0,    0,    0,    0,    0,    EDGE, \
+    EDGE, 0,    0,    0,    0,    0,    0,    0,    0,    EDGE, \
+    EDGE, 0,    0,    0,    0,    0,    0,    0,    0,    EDGE, \
+    EDGE, 0,    0,    0,    0,    0,    0,    0,    0,    EDGE, \
+    EDGE, 0,    0,    0,    0,    0,    0,    0,    0,    EDGE, \
+    EDGE, 0,    0,    0,    0,    0,    0,    0,    0,    EDGE, \
+    EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
+    EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
+}
 // lookup tables
 int8 ranks[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -75,16 +91,16 @@ int8 ranks[120] = {
 int8 files[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 0,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 0,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 0,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 0,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 0,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 0,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 0,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 0,
+    0, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 0,
+    0, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 0,
+    0, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 0,
+    0, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 0,
+    0, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 0,
+    0, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 0,
+    0, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 0,
+    0, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    0, 0, 0, 0, 0, 0,0,0,0, 0
 };
 int8 diagonals1[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
