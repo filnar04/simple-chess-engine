@@ -42,13 +42,13 @@ printBoard (int8 *board)
 }
 
 void
-perft (int8 *board, struct gamestate gameState, int8 color, unsigned depth)
+perft (int8 *board, struct gamestate gameState, unsigned depth)
 {
     int8 *l = calloc (256, 1);
     int8 *p = calloc (256, 1);
-    unsigned moveCount = searchMoves (board, gameState, color, l, p);
+    unsigned moveCount = searchMoves (board, gameState, l, p);
     int8 promotionRank = WHITE_PROMOTION;
-    if (color == BLACK) promotionRank = BLACK_PROMOTION;
+    if (gameState.turn == BLACK) promotionRank = BLACK_PROMOTION;
     if (moveCount != 0) {
         int8 *nextBoard = board + BOARD_MEM_SIZE;
         struct gamestate nextGameState;
@@ -58,6 +58,7 @@ perft (int8 *board, struct gamestate gameState, int8 color, unsigned depth)
         for (int i = 0; i < moveCount; i++) {
 
             memcpy (&nextGameState, &gameState, sizeof (struct gamestate));
+            nextGameState.turn ^= COLOR_MASK;
             int8 promotion = 0;
             if (p[i] >= FIRST_SQUARE) {
                 start = p[i];
@@ -78,7 +79,6 @@ perft (int8 *board, struct gamestate gameState, int8 color, unsigned depth)
             putchar ('\n');
 #endif
             char error = 0;
-            if (board[dest]) captures[depth]++;
             if ((board[dest] & PIECE_TYPE) == KING) {
 
                 int8 king
@@ -107,6 +107,7 @@ perft (int8 *board, struct gamestate gameState, int8 color, unsigned depth)
                 return;
             }
 #endif
+            if (board[dest]) captures[depth]++;
             if ((board[start] & PIECE_TYPE) == PAWN) {
                 if (files[dest] != files[start] && board[dest] == 0)
                     enpassants[depth]++;
@@ -124,8 +125,7 @@ perft (int8 *board, struct gamestate gameState, int8 color, unsigned depth)
             if (depth + 1 < maxDepth) {
                 memcpy (nextBoard, board, BOARD_MEM_SIZE);
                 makeMove (nextBoard, &nextGameState, start, l[i], promotion);
-                perft (nextBoard, nextGameState, color ^ COLOR_MASK,
-                       depth + 1);
+                perft (nextBoard, nextGameState, depth + 1);
             }
         }
     }
@@ -161,7 +161,7 @@ main (int argc, char *argv[])
         memcpy (boards, currentBoard, BOARD_MEM_SIZE);
     }
     maxDepth = atoi (argv[1]);
-    perft (boards, initState, initState.turn, 0);
+    perft (boards, initState, 0);
     printf (
         "depth\t|   nodes   | captures | castles  |   e. p.  | promotions\n");
     for (int i = 0; i < maxDepth; i++) {

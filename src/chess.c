@@ -101,11 +101,10 @@ isPinned (int8 *board, int8 pos, int8 kingPos)
 }
 
 int8
-findPawnMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
-               int8 *list)
+findPawnMoves (int8 *board, struct gamestate gameState, int8 pos, int8 *list)
 {
     int8 moveCount = 0, step = WIDTH;
-    if (color == BLACK) step = -WIDTH;
+    if (gameState.turn == BLACK) step = -WIDTH;
     if (!board[pos + step]) {
         list[moveCount++] = pos + step;
         if (!(board[pos] & HAS_MOVED) && !board[pos + (step << 1)])
@@ -117,7 +116,7 @@ findPawnMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
          list[moveCount++] = next;
      next -= 2;*/
     for (int i = 0; i < 2; i++) {
-        if (board[next] && !(board[next] & color)) {
+        if (board[next] && !(board[next] & gameState.turn)) {
             list[moveCount++] = next;
         } else if (gameState.enpasssant == next) {
             int8 tmp = board[next - step];
@@ -125,9 +124,9 @@ findPawnMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
             board[pos] = 0;
             board[next - step] = 0;
             if (!testCheck (board,
-                            (color == WHITE) ? gameState.kingW
-                                             : gameState.kingB,
-                            color)) {
+                            (gameState.turn == WHITE) ? gameState.kingW
+                                                      : gameState.kingB,
+                            gameState.turn)) {
                 list[moveCount++] = next;
             }
             board[pos] = board[next];
@@ -195,17 +194,16 @@ testCastling (int8 *board, int8 king, int8 rook)
 }
 
 int8
-findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
-               int8 *list)
+findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 *list)
 {
     int8 temp, next, moveCount = 0;
     for (int i = 0; i < 8; i++) {
         next = pos + kingMoves[i];
-        if (!(board[next] & color)) {
+        if (!(board[next] & gameState.turn)) {
             temp = board[next];
             board[next] = board[pos];
             board[pos] = 0;
-            if (!testCheck (board, next, color)) {
+            if (!testCheck (board, next, gameState.turn)) {
                 list[moveCount++] = next;
             }
             board[pos] = board[next];
@@ -213,7 +211,7 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
         }
     }
     // TODO: do something with this mess
-    if (gameState.shortcastle & color) {
+    if (gameState.shortcastle & gameState.turn) {
         /*if (!(board[pos + 1]) && !board[pos + 2]
             && (board[pos + 3] & (PIECE_TYPE | HAS_MOVED)) == ROOK
             && (board[pos + 3] & color))*/
@@ -222,8 +220,8 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
             board[pos] = 0;
             board[pos + 1] = board[pos + 3];
             board[pos + 3] = 0;
-            if (!(testCheck (board, pos + 2, color)
-                  || testCheck (board, pos + 1, color)))
+            if (!(testCheck (board, pos + 2, gameState.turn)
+                  || testCheck (board, pos + 1, gameState.turn)))
                 list[moveCount++] = pos + 2;
             board[pos] = board[pos + 2];
             board[pos + 2] = 0;
@@ -231,7 +229,7 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
             board[pos + 1] = 0;
         }
     }
-    if (gameState.longcastle & color) {
+    if (gameState.longcastle & gameState.turn) {
         /*if (!(board[pos - 1]) && !(board[pos - 2]) && !(board[pos - 3])
             && (board[pos - 4] & (PIECE_TYPE | HAS_MOVED)) == ROOK
             && (board[pos - 4] & color))*/
@@ -240,8 +238,8 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
             board[pos] = 0;
             board[pos - 1] = board[pos - 4];
             board[pos - 4] = 0;
-            if (!(testCheck (board, pos - 2, color)
-                  || testCheck (board, pos - 1, color)))
+            if (!(testCheck (board, pos - 2, gameState.turn)
+                  || testCheck (board, pos - 1, gameState.turn)))
                 list[moveCount++] = pos - 2;
             board[pos] = board[pos - 2];
             board[pos - 2] = 0;
@@ -256,7 +254,7 @@ void
 makeMove (int8 *board, struct gamestate *gameState, int8 start, int8 end,
           int8 promotion)
 {
-    int8 color = board[start] & COLOR_MASK;
+    int8 color = gameState->turn;
     gameState->halfmove += 1;
     gameState->enpasssant = 0;
     if ((board[start] & PIECE_TYPE) == PAWN) {
@@ -301,12 +299,11 @@ findPieceMoves (int8 *board, struct gamestate gameState, int8 square,
 {
     unsigned int numMoves;
     int8 tempMoveList[30];
-    int8 color = board[square] & COLOR_MASK;
+    int8 color = gameState.turn;
     int8 type = board[square] & PIECE_TYPE;
     switch (type) {
     case PAWN:
-        numMoves
-            = findPawnMoves (board, gameState, square, color, tempMoveList);
+        numMoves = findPawnMoves (board, gameState, square, tempMoveList);
         break;
     case KNIGHT:
         numMoves = findKnightMoves (board, square, color, tempMoveList);
@@ -321,8 +318,7 @@ findPieceMoves (int8 *board, struct gamestate gameState, int8 square,
         numMoves = findQueenMoves (board, square, color, tempMoveList);
         break;
     case KING:
-        numMoves
-            = findKingMoves (board, gameState, square, color, tempMoveList);
+        numMoves = findKingMoves (board, gameState, square, tempMoveList);
         break;
     // Should never happen
     default:
@@ -355,24 +351,26 @@ findPieceMoves (int8 *board, struct gamestate gameState, int8 square,
 }
 
 unsigned int
-searchMoves (int8 *board, struct gamestate gameState, int8 color,
-             int8 *moveList, int8 *pieceList)
+searchMoves (int8 *board, struct gamestate gameState, int8 *moveList,
+             int8 *pieceList)
 {
-    int8 kingPos = (color == WHITE) ? gameState.kingW : gameState.kingB;
-    int8 attackerNum = testCheck (board, kingPos, color);
+    int8 kingPos
+        = (gameState.turn == WHITE) ? gameState.kingW : gameState.kingB;
+    int8 attackerNum = testCheck (board, kingPos, gameState.turn);
     unsigned int moveCount = 0;
 
     if (attackerNum > 1) {
         // king attacked by 2 enemy pieces -> the king MUST move
         pieceList[0] = kingPos;
-        return findKingMoves (board, gameState, kingPos, color, moveList);
+        return findKingMoves (board, gameState, kingPos, moveList);
     }
-    int8 promotionRank = (color == WHITE) ? WHITE_PROMOTION : BLACK_PROMOTION;
+    int8 promotionRank
+        = (gameState.turn == WHITE) ? WHITE_PROMOTION : BLACK_PROMOTION;
     for (int r = 1; r <= 8; r++) {
         for (int c = 1; c <= 8; c++) {
             int8 square = WIDTH * (r + 1) + c;
             int8 piece = board[square];
-            if (!(piece & color)) continue;
+            if (!(piece & gameState.turn)) continue;
             int8 numMoves = 0;
             int8 *currMoveList = moveList + moveCount;
 
