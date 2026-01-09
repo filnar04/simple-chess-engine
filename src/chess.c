@@ -19,7 +19,7 @@ testCheck (int8 *board, int8 pos, int8 color)
     if (!(board[attack_pos - 2] & color)
         && (board[attack_pos - 2] & PIECE_TYPE) == PAWN) {
         attack_num++;
-    } // nevermind, I'm stupid
+    }
 
     for (int i = 0; i < KNIGHT_MOVES; i++) {
         attack_pos = pos + knightMoves[i];
@@ -82,12 +82,12 @@ isPinned (int8 *board, int8 pos, int8 kingPos)
 {
     int8 next, color = board[pos] & COLOR_MASK;
     if (ranks[pos] == ranks[kingPos]) {
-        testPin (board, pos, kingPos, color, 1, ROOK)
-        // return 1;
+        // testPin (board, pos, kingPos, color, 1, ROOK)
+        return 1;
     }
     if (files[pos] == files[kingPos]) {
-        testPin (board, pos, kingPos, color, VERTICAL_STEP, ROOK)
-        // return 1;
+        // testPin (board, pos, kingPos, color, VERTICAL_STEP, ROOK)
+        return 1;
     }
     if (diagonals1[pos] == diagonals1[kingPos]) {
         testPin (board, pos, kingPos, color, VERTICAL_STEP + 1, BISHOP)
@@ -111,14 +111,31 @@ findPawnMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
         if (!(board[pos] & HAS_MOVED) && !board[pos + (step << 1)])
             list[moveCount++] = pos + (step << 1);
     }
-    int8 next = pos + step + 1;
-    if ((board[next] && !(board[next] & color))
-        || gameState.enpasssant == next)
-        list[moveCount++] = next;
-    next -= 2;
-    if ((board[next] && !(board[next] & color))
-        || gameState.enpasssant == next)
-        list[moveCount++] = next;
+    int8 next = pos + step + 1; /*
+     if ((board[next] && !(board[next] & color))
+         || gameState.enpasssant == next)
+         list[moveCount++] = next;
+     next -= 2;*/
+    for (int i = 0; i < 2; i++) {
+        if (board[next] && !(board[next] & color)) {
+            list[moveCount++] = next;
+        } else if (gameState.enpasssant == next) {
+            int8 tmp = board[next - step];
+            board[next] = board[pos];
+            board[pos] = 0;
+            board[next - step] = 0;
+            if (!testCheck (board,
+                            (color == WHITE) ? gameState.kingW
+                                             : gameState.kingB,
+                            color)) {
+                list[moveCount++] = next;
+            }
+            board[pos] = board[next];
+            board[next - step] = tmp;
+            board[next] = 0;
+        }
+        next -= 2;
+    }
     return moveCount;
 }
 
@@ -326,8 +343,6 @@ findPieceMoves (int8 *board, struct gamestate gameState, int8 square,
             int8 tmpKingPos = (type == KING) ? tempMoveList[i] : kingPos;
             if (testCheck (board, tmpKingPos, color) == 0) {
                 moveList[numLegal++] = tempMoveList[i];
-            } else {
-                ; // printf ("can't move! %d->%d\n", square, tempMoveList[i]);
             }
             board[square] = board[tempMoveList[i]];
             board[tempMoveList[i]] = tmp;
