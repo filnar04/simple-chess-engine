@@ -163,6 +163,21 @@ findQueenMoves (int8 *board, int8 pos, int8 color, int8 *list)
 }
 
 int8
+testCastling (int8 *board, int8 king, int8 rook)
+{
+    if ((board[rook] & (PIECE_TYPE | HAS_MOVED)) != ROOK) return 0;
+    int8 step = (king < rook) ? 1 : -1;
+    for (int8 i = king + step; i != rook; i += step) {
+        if (board[i]) return 0;
+    }
+    for (int8 j = 0; j < 3; j++) {
+        if (testCheck (board, king + j * step, board[king] & COLOR_MASK))
+            return 0;
+    }
+    return 1;
+}
+
+int8
 findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
                int8 *list)
 {
@@ -182,9 +197,10 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
     }
     // TODO: do something with this mess
     if (gameState.shortcastle & color) {
-        if (!(board[pos + 1]) && !board[pos + 2]
+        /*if (!(board[pos + 1]) && !board[pos + 2]
             && (board[pos + 3] & (PIECE_TYPE | HAS_MOVED)) == ROOK
-            && (board[pos + 3] & color)) {
+            && (board[pos + 3] & color))*/
+        if (testCastling (board, pos, pos + 3)) {
             board[pos + 2] = board[pos];
             board[pos] = 0;
             board[pos + 1] = board[pos + 3];
@@ -199,9 +215,10 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
         }
     }
     if (gameState.longcastle & color) {
-        if (!(board[pos - 1]) && !(board[pos - 2]) && !(board[pos - 3])
+        /*if (!(board[pos - 1]) && !(board[pos - 2]) && !(board[pos - 3])
             && (board[pos - 4] & (PIECE_TYPE | HAS_MOVED)) == ROOK
-            && (board[pos - 4] & color)) {
+            && (board[pos - 4] & color))*/
+        if (testCastling (board, pos, pos - 4)) {
             board[pos - 2] = board[pos];
             board[pos] = 0;
             board[pos - 1] = board[pos - 4];
@@ -231,7 +248,12 @@ makeMove (int8 *board, struct gamestate *gameState, int8 start, int8 end,
             board[end] = promotion | color; //| HAS_MOVED;
             board[start] = 0;
             return;
+        } else if (files[start] != files[end] && !board[end]) { // en passant
+            int8 enemy
+                = (color == WHITE) ? end - VERTICAL_STEP : end + VERTICAL_STEP;
+            board[enemy] = 0;
         }
+
         if (abs (end - start) == 2 * WIDTH) {
             gameState->enpasssant = ((short)end + start) / 2;
         }
