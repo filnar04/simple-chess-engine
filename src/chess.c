@@ -82,12 +82,12 @@ isPinned (int8 *board, int8 pos, int8 kingPos)
 {
     int8 next, color = board[pos] & COLOR_MASK;
     if (ranks[pos] == ranks[kingPos]) {
-        // testPin (board, pos, kingPos, color, 1, ROOK)
-        return 1;
+        testPin (board, pos, kingPos, color, 1, ROOK)
+        // return 1;
     }
     if (files[pos] == files[kingPos]) {
-        // testPin (board, pos, kingPos, color, VERTICAL_STEP, ROOK)
-        return 1;
+        testPin (board, pos, kingPos, color, VERTICAL_STEP, ROOK)
+        // return 1;
     }
     if (diagonals1[pos] == diagonals1[kingPos]) {
         testPin (board, pos, kingPos, color, VERTICAL_STEP + 1, BISHOP)
