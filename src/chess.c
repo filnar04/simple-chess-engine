@@ -195,7 +195,7 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 color,
             board[pos] = board[pos + 2];
             board[pos + 2] = 0;
             board[pos + 3] = board[pos + 1];
-            board[pos + 1] = board[pos + 3];
+            board[pos + 1] = 0;
         }
     }
     if (gameState.longcastle & color) {
