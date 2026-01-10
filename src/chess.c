@@ -380,7 +380,7 @@ searchMoves (int8 *board, struct gamestate gameState, int8 *moveList,
             if ((piece & PIECE_TYPE) == PAWN
                 && ranks[currMoveList[0]] == promotionRank) {
                 int8 temp[3];
-                memcpy (temp, moveList, numMoves);
+                memcpy (temp, currMoveList, numMoves);
                 for (int i = 0; i < numMoves; i++) {
                     moveList[moveCount++] = temp[i];
                     for (int j = 0; j < 3; j++) { // underpromotion
