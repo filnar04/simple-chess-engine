@@ -110,11 +110,7 @@ findPawnMoves (int8 *board, struct gamestate gameState, int8 pos, int8 *list)
         if (!(board[pos] & HAS_MOVED) && !board[pos + (step << 1)])
             list[moveCount++] = pos + (step << 1);
     }
-    int8 next = pos + step + 1; /*
-     if ((board[next] && !(board[next] & color))
-         || gameState.enpasssant == next)
-         list[moveCount++] = next;
-     next -= 2;*/
+    int8 next = pos + step + 1;
     for (int i = 0; i < 2; i++) {
         if (board[next] && !(board[next] & gameState.turn)) {
             list[moveCount++] = next;
@@ -332,6 +328,10 @@ findPieceMoves (int8 *board, struct gamestate gameState, int8 square,
     int8 numLegal = 0;
     if (inCheck || pinned) {
         for (int i = 0; i < numMoves; i++) {
+            if (type == PAWN && tempMoveList[i] == gameState.enpasssant) {
+                moveList[numLegal++] = tempMoveList[i];
+                continue;
+            }
             int8 tmp = board[tempMoveList[i]];
             board[tempMoveList[i]] = board[square];
             board[square] = 0;
