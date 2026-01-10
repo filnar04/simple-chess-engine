@@ -251,10 +251,9 @@ findKingMoves (int8 *board, struct gamestate gameState, int8 pos, int8 *list)
 }
 
 void
-makeMove (int8 *board, struct gamestate *gameState, int8 start, int8 end,
-          int8 promotion)
+makeMove (int8 *board, struct gamestate *gameState, int8 color, int8 start,
+          int8 end, int8 promotion)
 {
-    int8 color = gameState->turn;
     gameState->halfmove += 1;
     gameState->enpasssant = 0;
     if ((board[start] & PIECE_TYPE) == PAWN) {

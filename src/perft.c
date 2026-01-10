@@ -1,3 +1,4 @@
+#include "../debug.h"
 #include "chess.c"
 #include "fen.c"
 #include "util.c"
@@ -81,22 +82,22 @@ perft (int8 *board, struct gamestate gameState, unsigned depth)
             char error = 0;
             if ((board[dest] & PIECE_TYPE) == KING) {
 
-                int8 king
-                    = (color == WHITE) ? gameState.kingB : gameState.kingW;
+                int8 king = (gameState.turn == WHITE) ? gameState.kingB
+                                                      : gameState.kingW;
                 printf ("ERROR: capturing king at %c%d (king pos: %c%d) from "
                         "%c%d\n",
                         files[dest], ranks[dest], files[king], ranks[king],
                         files[start], ranks[start]);
                 printf ("capturing piece: %x, turn: %c\n", board[start],
-                        (color == WHITE) ? 'w' : 'b');
+                        (gameState.turn == WHITE) ? 'w' : 'b');
                 error = 1;
             }
-            if (board[dest] & color) {
+            if (board[dest] & gameState.turn) {
                 printf ("ERROR: capturing own piece at %c%d from "
                         "%c%d\n",
                         files[dest], ranks[dest], files[start], ranks[start]);
                 printf ("capturing piece: %x, turn: %c\n", board[start],
-                        (color == WHITE) ? 'w' : 'b');
+                        (gameState.turn == WHITE) ? 'w' : 'b');
                 error = 1;
             }
             if (error) {
@@ -124,7 +125,8 @@ perft (int8 *board, struct gamestate gameState, unsigned depth)
             }
             if (depth + 1 < maxDepth) {
                 memcpy (nextBoard, board, BOARD_MEM_SIZE);
-                makeMove (nextBoard, &nextGameState, start, l[i], promotion);
+                makeMove (nextBoard, &nextGameState, gameState.turn, start,
+                          l[i], promotion);
                 perft (nextBoard, nextGameState, depth + 1);
             }
         }
