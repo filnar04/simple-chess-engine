@@ -1,11 +1,9 @@
-#include "../debug.h"
 #include "chess.c"
 #include "fen.c"
 #include "util.c"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 int8 boards[BOARD_MEM_SIZE * 256] = EMPTY_BOARD;
 struct gamestate initState;
 unsigned int maxDepth = 0;
@@ -55,6 +53,19 @@ perft (int8 *board, struct gamestate gameState, unsigned depth)
         struct gamestate nextGameState;
         memcpy (&nextGameState, &gameState, sizeof (struct gamestate));
         int8 start = 0;
+#ifdef VERBOSE_DEBUG_INFO
+        for (int j = 0; j < moveCount; j++) {
+            if (p[j] >= FIRST_SQUARE)
+                printf ("%c%d ", files[p[j]], ranks[p[j]]);
+            else
+                printf ("-- ");
+        }
+        putchar ('\n');
+        for (int j = 0; j < moveCount; j++) {
+            printf ("%c%d ", files[l[j]], ranks[l[j]]);
+        }
+        putchar ('\n');
+#endif
 
         for (int i = 0; i < moveCount; i++) {
 
@@ -65,20 +76,7 @@ perft (int8 *board, struct gamestate gameState, unsigned depth)
                 start = p[i];
             }
             int8 dest = l[i];
-#ifdef DEBUG_INFO
-#ifdef VERBOSE_DEBUG_INFO
-            for (int j = 0; j < moveCount; j++) {
-                if (p[j] >= FIRST_SQUARE)
-                    printf ("%c%d ", files[p[j]], ranks[p[j]]);
-                else
-                    printf ("-- ");
-            }
-            putchar ('\n');
-            for (int j = 0; j < moveCount; j++) {
-                printf ("%c%d ", files[l[j]], ranks[l[j]]);
-            }
-            putchar ('\n');
-#endif
+#ifdef MORE_INFO
             char error = 0;
             if ((board[dest] & PIECE_TYPE) == KING) {
 
@@ -164,11 +162,18 @@ main (int argc, char *argv[])
     }
     maxDepth = atoi (argv[1]);
     perft (boards, initState, 0);
-    printf (
-        "depth\t|   nodes   | captures | castles  |   e. p.  | promotions\n");
+    printf ("depth\t|   nodes   ");
+#ifdef MORE_INFO
+    printf ("| captures | castles  |   e. p.  | promotions");
+#endif
+    putchar ('\n');
     for (int i = 0; i < maxDepth; i++) {
-        printf ("%d\t| %10llu|%10llu|%10llu|%10llu|%10llu\n", i + 1, nodes[i],
-                captures[i] + enpassants[i], castles[i], enpassants[i],
-                promotions[i]);
+#ifdef MORE_INFO
+        printf ("%d\t| %10llu|%10llu|%10llu|%10llu|  %10llu\n", i + 1,
+                nodes[i], captures[i] + enpassants[i], castles[i],
+                enpassants[i], promotions[i]);
+#else
+        printf ("%d\t| %10llu\n", i + 1, nodes[i]);
+#endif
     }
 }
