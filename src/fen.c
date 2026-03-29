@@ -116,9 +116,10 @@ loadPosition (char *fen, int8 *board, struct gamestate *gameState)
         }
     }
     if (fen[x] != '-') {
-        return;
+        file = fen[x] - 'a' + 1;
+        rank = fen[++x];
+        gameState->enpasssant = VERTICAL_STEP * (rank - '0' + 1) + file;
+    } else {
+        gameState->enpasssant = 0;
     }
-    file = fen[x] - 'a' + 1;
-    rank = fen[++x];
-    gameState->enpasssant = VERTICAL_STEP * (rank + 1) + file;
 }
