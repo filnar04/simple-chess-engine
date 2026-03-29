@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-int8 boards[BOARD_MEM_SIZE * 256] = EMPTY_BOARD;
+int8 board[256] = EMPTY_BOARD;
 struct gamestate initState;
 unsigned int maxDepth = 0;
 unsigned long long nodes[10];
@@ -43,15 +43,14 @@ printBoard (int8 *board)
 void
 perft (int8 *board, struct gamestate gameState, unsigned depth)
 {
-    int8 *l = calloc (256, 1);
-    int8 *p = calloc (256, 1);
+    int8 l[256] = { 0 };
+    int8 p[256] = { 0 };
     unsigned moveCount = searchMoves (board, gameState, l, p);
     int8 promotionRank = WHITE_PROMOTION;
     if (gameState.turn == BLACK) promotionRank = BLACK_PROMOTION;
     if (moveCount != 0) {
-        int8 *nextBoard = board + BOARD_MEM_SIZE;
+        int8 nextBoard[BOARD_MEM_SIZE];
         struct gamestate nextGameState;
-        memcpy (&nextGameState, &gameState, sizeof (struct gamestate));
         int8 start = 0;
 #ifdef VERBOSE_DEBUG_INFO
         for (int j = 0; j < moveCount; j++) {
@@ -130,8 +129,6 @@ perft (int8 *board, struct gamestate gameState, unsigned depth)
         }
     }
 
-    free (l);
-    free (p);
     nodes[depth] += moveCount;
     return;
 }
@@ -145,9 +142,9 @@ main (int argc, char *argv[])
         char *fen = NULL;
         size_t len = 0;
         getline (&fen, &len, source);
-        loadPosition (fen, boards, &initState);
+        loadPosition (fen, board, &initState);
         free (fen);
-        printBoard (boards);
+        printBoard (board);
     } else {
         // hardcoding goes brrrr
         initState.turn = WHITE;
@@ -158,10 +155,10 @@ main (int argc, char *argv[])
         initState.enpasssant = 0;
         initState.halfmove = 0;
 
-        memcpy (boards, currentBoard, BOARD_MEM_SIZE);
+        memcpy (board, currentBoard, BOARD_MEM_SIZE);
     }
     maxDepth = atoi (argv[1]);
-    perft (boards, initState, 0);
+    perft (board, initState, 0);
     printf ("depth\t|   nodes   ");
 #ifdef MORE_INFO
     printf ("| captures | castles  |   e. p.  | promotions");
