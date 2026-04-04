@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-int8 board[256] = EMPTY_BOARD;
+uint8_t board[256] = EMPTY_BOARD;
 struct gamestate initState;
 unsigned int maxDepth = 0;
 unsigned long long nodes[10];
@@ -14,11 +14,11 @@ unsigned long long captures[10], enpassants[10], castles[10], promotions[10];
 
 char symbols[] = { ' ', 'P', 'N', 'B', 'R', 'Q', 'K' };
 void
-printBoard (int8 *board)
+printBoard (uint8_t *board)
 {
     for (int r = 8; r >= 1; r--) {
         for (int c = 1; c <= 8; c++) {
-            int8 pos = WIDTH * (r + 1) + c;
+            int8_t pos = WIDTH * (r + 1) + c;
             if ((r + c) & 1) {
                 printf ("\033[103m");
             } else {
@@ -41,17 +41,17 @@ printBoard (int8 *board)
 }
 
 void
-perft (int8 *board, struct gamestate gameState, unsigned depth)
+perft (uint8_t *board, struct gamestate gameState, unsigned depth)
 {
-    int8 l[256] = { 0 };
-    int8 p[256] = { 0 };
+    int8_t l[256] = { 0 };
+    int8_t p[256] = { 0 };
     unsigned moveCount = searchMoves (board, gameState, l, p);
-    int8 promotionRank = WHITE_PROMOTION;
+    int8_t promotionRank = WHITE_PROMOTION;
     if (gameState.turn == BLACK) promotionRank = BLACK_PROMOTION;
     if (moveCount != 0) {
-        int8 nextBoard[BOARD_MEM_SIZE];
+        uint8_t nextBoard[BOARD_MEM_SIZE];
         struct gamestate nextGameState;
-        int8 start = 0;
+        int8_t start = 0;
 #ifdef VERBOSE_DEBUG_INFO
         for (int j = 0; j < moveCount; j++) {
             if (p[j] >= FIRST_SQUARE)
@@ -70,17 +70,17 @@ perft (int8 *board, struct gamestate gameState, unsigned depth)
 
             memcpy (&nextGameState, &gameState, sizeof (struct gamestate));
             nextGameState.turn ^= COLOR_MASK;
-            int8 promotion = 0;
+            int8_t promotion = 0;
             if (p[i] >= FIRST_SQUARE) {
                 start = p[i];
             }
-            int8 dest = l[i];
+            int8_t dest = l[i];
 #ifdef MORE_INFO
             char error = 0;
             if ((board[dest] & PIECE_TYPE) == KING) {
 
-                int8 king = (gameState.turn == WHITE) ? gameState.kingB
-                                                      : gameState.kingW;
+                int8_t king = (gameState.turn == WHITE) ? gameState.kingB
+                                                        : gameState.kingW;
                 printf ("ERROR: capturing king at %c%d (king pos: %c%d) from "
                         "%c%d\n",
                         files[dest], ranks[dest], files[king], ranks[king],

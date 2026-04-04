@@ -1,6 +1,5 @@
 #pragma once
-
-typedef signed char int8;
+#include <stdint.h>
 
 #define WIDTH 10
 #define BOARD_SIZE 8
@@ -23,23 +22,23 @@ enum pieces { PAWN = 1, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 #define CLEAR_TYPE 0xf8
 
 struct gamestate {
-    int8 turn;
-    int8 kingW;
-    int8 kingB;
-    int8 shortcastle;
-    int8 longcastle;
-    int8 enpasssant;
-    int8 halfmove;
+    int8_t turn;
+    int8_t kingW;
+    int8_t kingB;
+    int8_t shortcastle;
+    int8_t longcastle;
+    int8_t enpasssant;
+    int8_t halfmove;
 };
 
 #define WHITE_PAWN_START 2
 #define BLACK_PAWN_START 7
-const int8 knightMoves[]
+const int8_t knightMoves[]
     = { -WIDTH + 2, -WIDTH - 2, -2 * WIDTH + 1, -2 * WIDTH - 1,
         WIDTH - 2,  WIDTH + 2,  2 * WIDTH + 1,  2 * WIDTH - 1 };
-const int8 bishopMoves[] = { -WIDTH + 1, WIDTH - 1, -WIDTH - 1, WIDTH + 1 };
-const int8 rookMoves[] = { -1, 1, -WIDTH, WIDTH };
-const int8 kingMoves[]
+const int8_t bishopMoves[] = { -WIDTH + 1, WIDTH - 1, -WIDTH - 1, WIDTH + 1 };
+const int8_t rookMoves[] = { -1, 1, -WIDTH, WIDTH };
+const int8_t kingMoves[]
     = { -1, 1, -WIDTH + 1, WIDTH - 1, -WIDTH, WIDTH, -WIDTH - 1, WIDTH + 1 };
 
 #define EDGE (WHITE | BLACK)
@@ -73,7 +72,7 @@ const int8 kingMoves[]
     EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
 }
 // lookup tables
-constexpr int8 ranks[120] = {
+constexpr int8_t ranks[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 1, 1, 1, 1, 1, 1, 1, 1, 0,
@@ -88,7 +87,7 @@ constexpr int8 ranks[120] = {
    0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 }; 
 
-constexpr int8 files[120] = {
+constexpr int8_t files[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 0,
@@ -102,7 +101,7 @@ constexpr int8 files[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0,0,0,0, 0
 };
-constexpr int8 diagonals1[120] = {
+constexpr int8_t diagonals1[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 8, 7, 6, 5, 4, 3, 2, 1, 0,
@@ -117,7 +116,7 @@ constexpr int8 diagonals1[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
 }; 
-constexpr int8 diagonals2[120] = {
+constexpr int8_t diagonals2[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 1, 2, 3, 4, 5, 6, 7, 8, 0,

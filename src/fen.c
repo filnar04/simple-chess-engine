@@ -4,11 +4,11 @@
 #include <stdlib.h>
 
 void
-loadPosition (char *fen, int8 *board, struct gamestate *gameState)
+loadPosition (char *fen, uint8_t *board, struct gamestate *gameState)
 {
-    int8 x = 0;
-    int8 square;
-    int8 rank = 8, file = 1;
+    int8_t x = 0;
+    int8_t square;
+    int8_t rank = 8, file = 1;
     char kingW = 0, kingB = 0;
     while (fen[x] != ' ') {
         if (fen[x] == '/') {
