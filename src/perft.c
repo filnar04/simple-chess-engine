@@ -43,15 +43,13 @@ printBoard (uint8_t *board)
 void
 perft (uint8_t *board, struct gamestate gameState, unsigned depth)
 {
-    int8_t l[256] = { 0 };
-    int8_t p[256] = { 0 };
-    unsigned moveCount = searchMoves (board, gameState, l, p);
+    struct move moves[256] = { 0 };
+    unsigned moveCount = searchMoves (board, gameState, moves);
     int8_t promotionRank = WHITE_PROMOTION;
     if (gameState.turn == BLACK) promotionRank = BLACK_PROMOTION;
     if (moveCount != 0) {
         uint8_t nextBoard[BOARD_MEM_SIZE];
         struct gamestate nextGameState;
-        int8_t start = 0;
 #ifdef VERBOSE_DEBUG_INFO
         for (int j = 0; j < moveCount; j++) {
             if (p[j] >= FIRST_SQUARE)
@@ -67,63 +65,55 @@ perft (uint8_t *board, struct gamestate gameState, unsigned depth)
 #endif
 
         for (int i = 0; i < moveCount; i++) {
-
             memcpy (&nextGameState, &gameState, sizeof (struct gamestate));
             nextGameState.turn ^= COLOR_MASK;
-            int8_t promotion = 0;
-            if (p[i] >= FIRST_SQUARE) {
-                start = p[i];
-            }
-            int8_t dest = l[i];
 #ifdef MORE_INFO
             char error = 0;
-            if ((board[dest] & PIECE_TYPE) == KING) {
+            if ((board[moves[i].end] & PIECE_TYPE) == KING) {
 
                 int8_t king = (gameState.turn == WHITE) ? gameState.kingB
                                                         : gameState.kingW;
                 printf ("ERROR: capturing king at %c%d (king pos: %c%d) from "
                         "%c%d\n",
-                        files[dest], ranks[dest], files[king], ranks[king],
-                        files[start], ranks[start]);
-                printf ("capturing piece: %x, turn: %c\n", board[start],
+                        files[moves[i].end], ranks[moves[i].end], files[king],
+                        ranks[king], files[moves[i].start],
+                        ranks[moves[i].start]);
+                printf ("capturing piece: %x, turn: %c\n",
+                        board[moves[i].start],
                         (gameState.turn == WHITE) ? 'w' : 'b');
                 error = 1;
             }
-            if (board[dest] & gameState.turn) {
+            if (board[moves[i].end] & gameState.turn) {
                 printf ("ERROR: capturing own piece at %c%d from "
                         "%c%d\n",
-                        files[dest], ranks[dest], files[start], ranks[start]);
-                printf ("capturing piece: %x, turn: %c\n", board[start],
+                        files[moves[i].end], ranks[moves[i].end],
+                        files[moves[i].start], ranks[moves[i].start]);
+                printf ("capturing piece: %x, turn: %c\n",
+                        board[moves[i].start],
                         (gameState.turn == WHITE) ? 'w' : 'b');
                 error = 1;
             }
             if (error) {
-                for (int i = 0; i <= depth; i++) {
-                    printBoard (board - BOARD_MEM_SIZE * i);
-                }
                 exit (EXIT_FAILURE);
                 return;
             }
 #endif
-            if (board[dest]) captures[depth]++;
-            if ((board[start] & PIECE_TYPE) == PAWN) {
-                if (files[dest] != files[start] && board[dest] == 0)
+            if (board[moves[i].end]) captures[depth]++;
+            if ((board[moves[i].start] & PIECE_TYPE) == PAWN) {
+                if (files[moves[i].end] != files[moves[i].start]
+                    && board[moves[i].end] == 0)
                     enpassants[depth]++;
-            } else if ((board[start] & PIECE_TYPE) == KING) {
-                if (abs (files[start] - files[dest]) > 1) castles[depth]++;
+            } else if ((board[moves[i].start] & PIECE_TYPE) == KING) {
+                if (abs (files[moves[i].start] - files[moves[i].end]) > 1)
+                    castles[depth]++;
             }
-            if ((board[start] & PIECE_TYPE) == PAWN
-                && ranks[l[i]] == promotionRank) {
+            if ((board[moves[i].start] & PIECE_TYPE) == PAWN
+                && ranks[moves[i].end] == promotionRank) {
                 promotions[depth]++;
-                if (p[i] > 0 && p[i] < FIRST_SQUARE)
-                    promotion = p[i];
-                else
-                    promotion = QUEEN;
             }
             if (depth + 1 < maxDepth) {
                 memcpy (nextBoard, board, BOARD_MEM_SIZE);
-                makeMove (nextBoard, &nextGameState, gameState.turn, start,
-                          l[i], promotion);
+                makeMove (nextBoard, &nextGameState, gameState.turn, moves[i]);
                 perft (nextBoard, nextGameState, depth + 1);
             }
         }

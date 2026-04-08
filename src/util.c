@@ -21,6 +21,13 @@ enum pieces { PAWN = 1, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 #define HAS_MOVED 010
 #define CLEAR_TYPE 0xf8
 
+struct move {
+    int8_t start;
+    int8_t end;
+    int8_t promotion;
+    int8_t priority;
+};
+
 struct gamestate {
     int8_t turn;
     int8_t kingW;

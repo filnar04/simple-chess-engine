@@ -1,7 +1,7 @@
 #include "util.c"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 int8_t currentBoard[120] = STARTING_POS;
 
@@ -250,49 +250,50 @@ findKingMoves (uint8_t *board, struct gamestate gameState, int8_t pos,
 
 void
 makeMove (uint8_t *board, struct gamestate *gameState, int8_t color,
-          int8_t start, int8_t end, int8_t promotion)
+          struct move m)
 {
     gameState->halfmove += 1;
     gameState->enpasssant = 0;
-    if ((board[start] & PIECE_TYPE) == PAWN) {
+    if ((board[m.start] & PIECE_TYPE) == PAWN) {
         gameState->halfmove = 0;
-        if (promotion > 0) {
-            board[end] = promotion | color; //| HAS_MOVED;
-            board[start] = 0;
+        if (m.promotion > 0) {
+            board[m.end] = m.promotion | color; //| HAS_MOVED;
+            board[m.start] = 0;
             return;
-        } else if (files[start] != files[end] && !board[end]) { // en passant
-            int8_t enemy
-                = (color == WHITE) ? end - VERTICAL_STEP : end + VERTICAL_STEP;
+        } else if (files[m.start] != files[m.end]
+                   && !board[m.end]) { // en passant
+            int8_t enemy = (color == WHITE) ? m.end - VERTICAL_STEP
+                                            : m.end + VERTICAL_STEP;
             board[enemy] = 0;
         }
 
-        if (abs (end - start) == 2 * WIDTH) {
-            gameState->enpasssant = ((short)end + start) / 2;
+        if (abs (m.end - m.start) == 2 * WIDTH) {
+            gameState->enpasssant = ((short)m.end + m.start) / 2;
         }
 
-    } else if ((board[start] & PIECE_TYPE) == KING) {
+    } else if ((board[m.start] & PIECE_TYPE) == KING) {
         if (color == WHITE)
-            gameState->kingW = end;
+            gameState->kingW = m.end;
         else
-            gameState->kingB = end;
+            gameState->kingB = m.end;
         gameState->shortcastle &= ~color;
         gameState->longcastle &= ~color;
-        if (end - start == 2) { // short castle
-            board[start + 1] = board[end + 1] | HAS_MOVED;
-            board[end + 1] = 0;
-        } else if (end - start == -2) {
-            board[start - 1] = board[end - 2] | HAS_MOVED;
-            board[end - 2] = 0;
+        if (m.end - m.start == 2) { // short castle
+            board[m.start + 1] = board[m.end + 1] | HAS_MOVED;
+            board[m.end + 1] = 0;
+        } else if (m.end - m.start == -2) {
+            board[m.start - 1] = board[m.end - 2] | HAS_MOVED;
+            board[m.end - 2] = 0;
         }
     }
-    if (board[end]) gameState->halfmove = 0;
-    board[end] = board[start] | HAS_MOVED;
-    board[start] = 0;
+    if (board[m.end]) gameState->halfmove = 0;
+    board[m.end] = board[m.start] | HAS_MOVED;
+    board[m.start] = 0;
 }
 
 unsigned int
 findPieceMoves (uint8_t *board, struct gamestate gameState, int8_t square,
-                int8_t inCheck, int8_t *moveList)
+                int8_t inCheck, struct move *moveList)
 {
     unsigned int numMoves;
     int8_t tempMoveList[30];
@@ -331,7 +332,9 @@ findPieceMoves (uint8_t *board, struct gamestate gameState, int8_t square,
     if (inCheck || pinned) {
         for (int i = 0; i < numMoves; i++) {
             if (type == PAWN && tempMoveList[i] == gameState.enpasssant) {
-                moveList[numLegal++] = tempMoveList[i];
+                moveList[numLegal].end = tempMoveList[i];
+                moveList[numLegal].start = square;
+                numLegal++;
                 continue;
             }
             int8_t tmp = board[tempMoveList[i]];
@@ -339,21 +342,25 @@ findPieceMoves (uint8_t *board, struct gamestate gameState, int8_t square,
             board[square] = 0;
             int8_t tmpKingPos = (type == KING) ? tempMoveList[i] : kingPos;
             if (testCheck (board, tmpKingPos, color) == 0) {
-                moveList[numLegal++] = tempMoveList[i];
+                moveList[numLegal].end = tempMoveList[i];
+                moveList[numLegal].start = square;
+                numLegal++;
             }
             board[square] = board[tempMoveList[i]];
             board[tempMoveList[i]] = tmp;
         }
     } else {
         numLegal = numMoves;
-        memcpy (moveList, tempMoveList, numLegal);
+        for (int i = 0; i < numLegal; i++) {
+            moveList[i].start = square;
+            moveList[i].end = tempMoveList[i];
+        }
     }
     return numLegal;
 }
 
 unsigned int
-searchMoves (uint8_t *board, struct gamestate gameState, int8_t *moveList,
-             int8_t *pieceList)
+searchMoves (uint8_t *board, struct gamestate gameState, struct move *moveList)
 {
     int8_t kingPos
         = (gameState.turn == WHITE) ? gameState.kingW : gameState.kingB;
@@ -362,8 +369,12 @@ searchMoves (uint8_t *board, struct gamestate gameState, int8_t *moveList,
 
     if (attackerNum > 1) {
         // king attacked by 2 enemy pieces -> the king MUST move
-        pieceList[0] = kingPos;
-        return findKingMoves (board, gameState, kingPos, moveList);
+        int8_t kingMoveList[8];
+        int nmoves = findKingMoves (board, gameState, kingPos, kingMoveList);
+        for (int i = 0; i < nmoves; i++) {
+            moveList->end = kingMoveList[i];
+            moveList->start = kingPos;
+        }
     }
     int8_t promotionRank
         = (gameState.turn == WHITE) ? WHITE_PROMOTION : BLACK_PROMOTION;
@@ -373,21 +384,22 @@ searchMoves (uint8_t *board, struct gamestate gameState, int8_t *moveList,
             int8_t piece = board[square];
             if (!(piece & gameState.turn)) continue;
             int8_t numMoves = 0;
-            int8_t *currMoveList = moveList + moveCount;
+            struct move *currMoveList = moveList + moveCount;
 
             numMoves = findPieceMoves (board, gameState, square, attackerNum,
                                        currMoveList);
             if (numMoves == 0) continue;
-            pieceList[moveCount] = square;
             if ((piece & PIECE_TYPE) == PAWN
-                && ranks[currMoveList[0]] == promotionRank) {
-                int8_t temp[3];
-                memcpy (temp, currMoveList, numMoves);
+                && ranks[currMoveList[0].end] == promotionRank) {
                 for (int i = 0; i < numMoves; i++) {
-                    moveList[moveCount++] = temp[i];
-                    for (int j = 0; j < 3; j++) { // underpromotion
-                        pieceList[moveCount] = KNIGHT + j;
-                        moveList[moveCount++] = temp[i];
+                    currMoveList[i].promotion = QUEEN;
+                    currMoveList[i].priority = 90;
+                    for (int j = 0; j < 3; j++) {
+                        moveList[moveCount].start = currMoveList[i].start;
+                        moveList[moveCount].end = currMoveList[i].end;
+                        moveList[moveCount].promotion = KNIGHT + j;
+                        moveList[moveCount].priority = 30;
+                        moveCount++;
                     }
                 }
             } else {
