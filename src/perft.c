@@ -1,16 +1,18 @@
 #include "chess.c"
 #include "fen.c"
 #include "util.c"
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 uint8_t board[256] = EMPTY_BOARD;
 struct gamestate initState;
-unsigned int maxDepth = 0;
+unsigned int maxDepth = 1;
 unsigned long long nodes[10];
 int count = 0;
 
 unsigned long long captures[10], enpassants[10], castles[10], promotions[10];
+uint8_t moreInfo = 0;
 
 char symbols[] = { ' ', 'P', 'N', 'B', 'R', 'Q', 'K' };
 void
@@ -65,9 +67,9 @@ perft (uint8_t *board, struct gamestate gameState, unsigned depth)
 #endif
 
         for (int i = 0; i < moveCount; i++) {
-            memcpy (&nextGameState, &gameState, sizeof (struct gamestate));
+            nextGameState = gameState;
             nextGameState.turn ^= COLOR_MASK;
-#ifdef MORE_INFO
+#ifdef SANITY_CHECK
             char error = 0;
             if ((board[moves[i].end] & PIECE_TYPE) == KING) {
 
@@ -98,18 +100,20 @@ perft (uint8_t *board, struct gamestate gameState, unsigned depth)
                 return;
             }
 #endif
-            if (board[moves[i].end]) captures[depth]++;
-            if ((board[moves[i].start] & PIECE_TYPE) == PAWN) {
-                if (files[moves[i].end] != files[moves[i].start]
-                    && board[moves[i].end] == 0)
-                    enpassants[depth]++;
-            } else if ((board[moves[i].start] & PIECE_TYPE) == KING) {
-                if (abs (files[moves[i].start] - files[moves[i].end]) > 1)
-                    castles[depth]++;
-            }
-            if ((board[moves[i].start] & PIECE_TYPE) == PAWN
-                && ranks[moves[i].end] == promotionRank) {
-                promotions[depth]++;
+            if (moreInfo) {
+                if (board[moves[i].end]) captures[depth]++;
+                if ((board[moves[i].start] & PIECE_TYPE) == PAWN) {
+                    if (files[moves[i].end] != files[moves[i].start]
+                        && board[moves[i].end] == 0)
+                        enpassants[depth]++;
+                } else if ((board[moves[i].start] & PIECE_TYPE) == KING) {
+                    if (abs (files[moves[i].start] - files[moves[i].end]) > 1)
+                        castles[depth]++;
+                }
+                if ((board[moves[i].start] & PIECE_TYPE) == PAWN
+                    && ranks[moves[i].end] == promotionRank) {
+                    promotions[depth]++;
+                }
             }
             if (depth + 1 < maxDepth) {
                 memcpy (nextBoard, board, BOARD_MEM_SIZE);
@@ -126,15 +130,52 @@ perft (uint8_t *board, struct gamestate gameState, unsigned depth)
 int
 main (int argc, char *argv[])
 {
-    if (argc < 2) return 0;
-    if (argc >= 3) {
-        FILE *source = fopen (argv[2], "r");
+    FILE *source = NULL;
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            switch (argv[i][1]) {
+            case 'i':
+                moreInfo = 1;
+                break;
+
+            case 'f':
+                source = fopen (argv[i + 1], "r");
+                if (source == NULL) {
+                    fprintf (stderr, "Can't open %s: ", argv[i + 1]);
+                    perror ("");
+                    exit (EXIT_FAILURE);
+                }
+                i++;
+                break;
+            case 'h':
+                printf ("Usage: %s [depth] [-f path] [-i] [-h]\n", argv[0]);
+                puts (
+                    "-i count captures, castles, en passants and promotions");
+                puts ("-f load starting position in FEN format from file "
+                      "(https://en.wikipedia.org/wiki/"
+                      "Forsyth%E2%80%93Edwards_Notation)");
+                puts ("-h display this message and exit");
+                exit (EXIT_SUCCESS);
+                break;
+
+            default:
+                fprintf (stderr, "Unknown option: %c", argv[i][1]);
+            }
+        } else if (isdigit (argv[i][0])) {
+            maxDepth = strtoul (argv[i], NULL, 0);
+        } else {
+            fprintf (stderr, "Unknown option: %s\n", argv[i]);
+            fprintf (stderr, "Usage: %s [depth] [-f path] [-i] [-h]\n",
+                     argv[0]);
+        }
+    }
+    if (source) {
         char *fen = NULL;
         size_t len = 0;
         getline (&fen, &len, source);
         loadPosition (fen, board, &initState);
         free (fen);
-        printBoard (board);
+        fclose (source);
     } else {
         // hardcoding goes brrrr
         initState.turn = WHITE;
@@ -147,20 +188,16 @@ main (int argc, char *argv[])
 
         memcpy (board, currentBoard, BOARD_MEM_SIZE);
     }
-    maxDepth = atoi (argv[1]);
     perft (board, initState, 0);
     printf ("depth\t|   nodes   ");
-#ifdef MORE_INFO
-    printf ("| captures | castles  |   e. p.  | promotions");
-#endif
+    if (moreInfo) printf ("| captures | castles  |   e. p.  | promotions");
     putchar ('\n');
     for (int i = 0; i < maxDepth; i++) {
-#ifdef MORE_INFO
-        printf ("%d\t| %10llu|%10llu|%10llu|%10llu|  %10llu\n", i + 1,
-                nodes[i], captures[i] + enpassants[i], castles[i],
-                enpassants[i], promotions[i]);
-#else
-        printf ("%d\t| %10llu\n", i + 1, nodes[i]);
-#endif
+        if (moreInfo) {
+            printf ("%d\t| %10llu|%10llu|%10llu|%10llu|  %10llu\n", i + 1,
+                    nodes[i], captures[i] + enpassants[i], castles[i],
+                    enpassants[i], promotions[i]);
+        } else
+            printf ("%d\t| %10llu\n", i + 1, nodes[i]);
     }
 }
