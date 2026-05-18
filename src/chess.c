@@ -391,17 +391,17 @@ searchMoves (uint8_t *board, struct gamestate gameState, struct move *moveList)
             if (numMoves == 0) continue;
             if ((piece & PIECE_TYPE) == PAWN
                 && ranks[currMoveList[0].end] == promotionRank) {
-                for (int i = 0; i < numMoves; i++) {
-                    currMoveList[i].promotion = QUEEN;
-                    currMoveList[i].priority = 90;
-                    for (int j = 0; j < 3; j++) {
-                        moveList[moveCount].start = currMoveList[i].start;
-                        moveList[moveCount].end = currMoveList[i].end;
-                        moveList[moveCount].promotion = KNIGHT + j;
-                        moveList[moveCount].priority = 30;
-                        moveCount++;
+                for (int i = numMoves - 1; i >= 0; i--) {
+                    currMoveList[i * 4].start = currMoveList[i].start;
+                    currMoveList[i * 4].end = currMoveList[i].end;
+                    currMoveList[i * 4].promotion = QUEEN;
+                    for (int j = 1; j <= 3; j++) {
+                        currMoveList[i * 4 + j].promotion = PAWN + j;
+                        currMoveList[i * 4 + j].end = currMoveList[i].end;
+                        currMoveList[i * 4 + j].start = currMoveList[i].start;
                     }
                 }
+                moveCount += 4 * numMoves; // 4 possible promotions
             } else {
                 moveCount += numMoves;
             }
