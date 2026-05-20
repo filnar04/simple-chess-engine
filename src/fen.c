@@ -1,4 +1,4 @@
-#include "util.c"
+#include "util.h"
 #include <err.h>
 #include <stdio.h>
 #include <stdlib.h>

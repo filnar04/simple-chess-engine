@@ -1,6 +1,6 @@
 #include "chess.c"
 #include "fen.c"
-#include "util.c"
+#include "util.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
