@@ -40,14 +40,6 @@ struct gamestate {
 
 #define WHITE_PAWN_START 2
 #define BLACK_PAWN_START 7
-const int8_t knightMoves[]
-    = { -WIDTH + 2, -WIDTH - 2, -2 * WIDTH + 1, -2 * WIDTH - 1,
-        WIDTH - 2,  WIDTH + 2,  2 * WIDTH + 1,  2 * WIDTH - 1 };
-const int8_t bishopMoves[] = { -WIDTH + 1, WIDTH - 1, -WIDTH - 1, WIDTH + 1 };
-const int8_t rookMoves[] = { -1, 1, -WIDTH, WIDTH };
-const int8_t kingMoves[]
-    = { -1, 1, -WIDTH + 1, WIDTH - 1, -WIDTH, WIDTH, -WIDTH - 1, WIDTH + 1 };
-
 #define EDGE (WHITE | BLACK)
 // clang-format off
 #define STARTING_POS {\
@@ -137,5 +129,4 @@ constexpr int8_t diagonals2[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
-
 // clang-format on

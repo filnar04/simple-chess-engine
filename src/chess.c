@@ -3,7 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int8_t currentBoard[120] = STARTING_POS;
+const int8_t knightMoves[]
+    = { -WIDTH + 2, -WIDTH - 2, -2 * WIDTH + 1, -2 * WIDTH - 1,
+        WIDTH - 2,  WIDTH + 2,  2 * WIDTH + 1,  2 * WIDTH - 1 };
+const int8_t bishopMoves[] = { -WIDTH + 1, WIDTH - 1, -WIDTH - 1, WIDTH + 1 };
+const int8_t rookMoves[] = { -1, 1, -WIDTH, WIDTH };
+const int8_t kingMoves[]
+    = { -1, 1, -WIDTH + 1, WIDTH - 1, -WIDTH, WIDTH, -WIDTH - 1, WIDTH + 1 };
 
 int8_t
 testCheck (uint8_t *board, int8_t pos, int8_t color)
