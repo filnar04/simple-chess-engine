@@ -1,5 +1,5 @@
-#include "chess.c"
-#include "fen.c"
+#include "chess.h"
+#include "fen.h"
 #include "util.h"
 #include <ctype.h>
 #include <stdio.h>
@@ -185,8 +185,8 @@ main (int argc, char *argv[])
         initState.longcastle = WHITE | BLACK;
         initState.enpasssant = 0;
         initState.halfmove = 0;
-
-        memcpy (board, currentBoard, BOARD_MEM_SIZE);
+        uint8_t initBoard[] = STARTING_POS;
+        memcpy (board, initBoard, BOARD_MEM_SIZE);
     }
     perft (board, initState, 0);
     printf ("depth\t|   nodes   ");
