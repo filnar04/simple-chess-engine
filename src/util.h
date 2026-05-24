@@ -70,6 +70,10 @@ struct gamestate {
     EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
     EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
 }
+
+#define BOARD_TO_LOGIC(x) (x % 8 + FIRST_SQUARE + 10 * (x / 8))
+#define LOGIC_TO_BOARD(x) ((x - FIRST_SQUARE) % 10 + 8 * ((x - FIRST_SQUARE)/ 10))
+
 // lookup tables
 constexpr int8_t ranks[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
