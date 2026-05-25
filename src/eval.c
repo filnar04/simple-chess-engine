@@ -9,53 +9,53 @@ int
 eval (uint8_t *board, struct gamestate *state)
 {
     if (state->halfmove >= 100) return 0;
-    constexpr int16_t pieceVal[] = { 0, 100, 300, 320, 500, 900, 0 };
+    constexpr int16_t pieceVal[] = { 0, 100, 310, 330, 500, 900, 0 };
     int8_t pawnsOnFileB[8] = { 0 };
     int8_t pawnsOnFileW[8] = { 0 };
     int8_t rooksOnFileB[8] = { 0 };
     int8_t rooksOnFileW[8] = { 0 };
     int val[2] = { 0 };
 
-    for (int i = FIRST_SQUARE; i < LAST_SQUARE; i++) {
-        if (board[i] & PIECE_TYPE) {
-            int p = pieceVal[board[i] & PIECE_TYPE];
-            int8_t isBlack = (board[i] & BLACK) > 0;
-            val[isBlack] += p;
-            switch (board[i] & PIECE_TYPE) {
-            case KNIGHT:
-                val[isBlack] += knightbonus[i];
-                break;
-            case PAWN:
-                if (isBlack) {
-                    if (pawnsOnFileB[files[i] - 'a'])
-                        val[1] += DOUBLE_PAWN_MOD;
-                    pawnsOnFileB[files[i] - 'a']++;
-                    val[1] += (7 - ranks[i]) * 5;
-                } else {
-                    if (pawnsOnFileW[files[i] - 'a'])
-                        val[0] += DOUBLE_PAWN_MOD;
-                    pawnsOnFileW[files[i] - 'a']++;
-                    val[0] += (ranks[i] - 1) * 5;
+    for (int r = 0; r < 8; r++)
+        for (int c = 0; c < 8; c++) {
+            int sq = FIRST_SQUARE + VERTICAL_STEP * r + c;
+            if (board[sq] & PIECE_TYPE) {
+                int p = pieceVal[board[sq] & PIECE_TYPE];
+                int8_t isBlack = (board[sq] & BLACK) > 0;
+                val[isBlack] += p;
+                switch (board[sq] & PIECE_TYPE) {
+                case KNIGHT:
+                    val[isBlack] += knightbonus[sq];
+                    break;
+                case PAWN:
+                    if (isBlack) {
+                        if (pawnsOnFileB[c]) val[1] += DOUBLE_PAWN_MOD;
+                        pawnsOnFileB[c]++;
+                        val[1] += (7 - r) * 3;
+                    } else {
+                        if (pawnsOnFileW[c]) val[0] += DOUBLE_PAWN_MOD;
+                        pawnsOnFileW[c]++;
+                        val[0] += (r) * 3;
+                    }
+                    break;
+
+                case ROOK:
+                    if (isBlack)
+                        rooksOnFileB[c]++;
+                    else
+                        rooksOnFileW[c]++;
+                    break;
+
+                case BISHOP: // negative points for bishops acting like pawns
+                    int8_t front = VERTICAL_STEP;
+                    if (isBlack) front = -VERTICAL_STEP;
+                    if ((board[sq + front + 1] & PIECE_TYPE) == PAWN)
+                        val[isBlack] += BLOCKED_BISHOP_MOD;
+                    if ((board[sq + front - 1] & PIECE_TYPE) == PAWN)
+                        val[isBlack] += BLOCKED_BISHOP_MOD;
                 }
-                break;
-
-            case ROOK:
-                if (isBlack)
-                    rooksOnFileB[files[i] - 'a']++;
-                else
-                    rooksOnFileW[files[i] - 'a']++;
-                break;
-
-            case BISHOP: // negative points for bishops acting like pawns
-                int8_t front = VERTICAL_STEP;
-                if (isBlack) front = -VERTICAL_STEP;
-                if ((board[i + front + 1] & PIECE_TYPE) == PAWN)
-                    val[isBlack] += BLOCKED_BISHOP_MOD;
-                if ((board[i + front - 1] & PIECE_TYPE) == PAWN)
-                    val[isBlack] += BLOCKED_BISHOP_MOD;
             }
         }
-    }
     for (int i = 0; i < 8; i++) {
         if (rooksOnFileB[i]) {
             if (pawnsOnFileB[i] == 0) {
@@ -80,6 +80,31 @@ eval (uint8_t *board, struct gamestate *state)
 
 #define MAX_DEPTH 20
 
+void
+quicksort (struct move *A, int len)
+{
+    if (len < 2) return;
+
+    uint32_t pivot = A[len / 2].priority;
+
+    int i, j;
+    for (i = 0, j = len - 1;; i++, j--) {
+        while (A[i].priority > pivot)
+            i++;
+        while (A[j].priority < pivot)
+            j--;
+
+        if (i >= j) break;
+
+        struct move temp = A[i];
+        A[i] = A[j];
+        A[j] = temp;
+    }
+
+    quicksort (A, i);
+    quicksort (A + i, len - i);
+}
+
 int
 alphabetaSearch (int alpha, int beta, uint8_t *board, struct gamestate *state,
                  int depth)
@@ -90,6 +115,7 @@ alphabetaSearch (int alpha, int beta, uint8_t *board, struct gamestate *state,
     struct move moves[256] = {};
 
     int n = searchMoves (board, *state, moves);
+    quicksort (moves, n);
     if (n == 0) {
         if (testCheck (board,
                        (state->turn == WHITE) ? state->kingW : state->kingB,
@@ -123,6 +149,7 @@ getBestMove (uint8_t *board, struct gamestate *state, uint maxdepth)
     uint bestmove = 0;
     uint startTime = clock ();
     uint depth = 2;
+    quicksort (moves, n);
     while (depth <= maxdepth && clock () - startTime < MAX_TIME / 2) {
         int alpha = -MATE;
         int beta = MATE;
