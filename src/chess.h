@@ -14,3 +14,6 @@ unsigned int searchMoves (uint8_t *board, struct gamestate gameState,
 unsigned int findPieceMoves (uint8_t *board, struct gamestate gameState,
                              int8_t square, int8_t inCheck,
                              struct move *moveList);
+
+int getMoveArray (uint8_t *board, struct gamestate gameState, int8_t square,
+                  int8_t inCheck, uint8_t *moveArr);

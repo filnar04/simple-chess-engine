@@ -415,3 +415,15 @@ searchMoves (uint8_t *board, struct gamestate gameState, struct move *moveList)
     }
     return moveCount;
 }
+
+int
+getMoveArray (uint8_t *board, struct gamestate gameState, int8_t square,
+              int8_t inCheck, uint8_t moveArr[64])
+{
+    struct move moves[300];
+    int moveNum = findPieceMoves (board, gameState, square, inCheck, moves);
+    for (int i = 0; i < moveNum; i++) {
+        moveArr[LOGIC_TO_BOARD (moves[i].end)] = 1;
+    }
+    return moveNum;
+}
