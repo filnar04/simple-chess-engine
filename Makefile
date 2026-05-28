@@ -37,5 +37,5 @@ chess_tui: build/chess.o build/eval.o build/game.o build/tui.o
 chess_gui: build/chess.o build/eval.o build/game.o build/gui.o
 	$(CC) -o chess_gui -lSDL3 build/chess.o build/eval.o build/game.o build/gui.o
 
-no_gui: perft chess_tui
+no_gui: build perft chess_tui
 
