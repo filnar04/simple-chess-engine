@@ -7,9 +7,9 @@
 To build
 - C compiler supporting C23 with GNU extensions
 - make
-- SDL3 (only for GUI version)
-To use
-- TUI version: terminal supporting RGB color 
+- SDL3 (only for GUI version)  
+
+for TUI version: terminal supporting RGB color 
 
 ## How to build
 - Clone this repository
