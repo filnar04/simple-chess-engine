@@ -427,3 +427,38 @@ getMoveArray (uint8_t *board, struct gamestate gameState, int8_t square,
     }
     return moveNum;
 }
+
+uint8_t
+checkMaterial (uint8_t *board)
+{
+    uint8_t knights[2] = { 0 }, bishops_light[2] = { 0 },
+            bishops_dark[2] = { 0 };
+    uint8_t result = 0;
+    for (int r = 0; r < 8; r++)
+        for (int c = 0; c < 8; c++) {
+            int i = BOARD_TO_LOGIC (8 * r + c);
+            uint8_t piece = board[i] & PIECE_TYPE;
+            if (piece == PAWN || piece == QUEEN || piece == ROOK) {
+                result |= board[i] & COLOR_MASK;
+            } else if (piece != KING) {
+                uint8_t player = 0;
+                if (board[i] & BLACK) player = 1;
+                if (piece == BISHOP) {
+                    if ((r + c) % 2) {
+                        bishops_light[player] += 1;
+                    } else {
+                        bishops_dark[player] += 1;
+                    }
+                } else {
+                    knights[player] += 1;
+                }
+            }
+        }
+    if ((bishops_light[0] && bishops_dark[0])
+        || (bishops_light[0] + bishops_dark[0] >= 1 && knights[0] > 0))
+        result |= WHITE;
+    if ((bishops_light[1] && bishops_dark[1])
+        || (bishops_light[1] + bishops_dark[1] >= 1 && knights[1] > 0))
+        result |= BLACK;
+    return result;
+}
