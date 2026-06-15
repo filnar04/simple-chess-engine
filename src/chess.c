@@ -81,7 +81,8 @@ testCheck (uint8_t *board, int8_t pos, int8_t color)
     if (!(board[next] & color)                                                \
         && ((board[next] & PIECE_TYPE) == type                                \
             || (board[next] & PIECE_TYPE) == QUEEN))                          \
-        return 1;
+        return 1;                                                             \
+    return 0;
 
 int8_t
 isPinned (uint8_t *board, int8_t pos, int8_t kingPos)
@@ -89,19 +90,15 @@ isPinned (uint8_t *board, int8_t pos, int8_t kingPos)
     int8_t next, color = board[pos] & COLOR_MASK;
     if (ranks[pos] == ranks[kingPos]) {
         testPin (board, pos, kingPos, color, 1, ROOK)
-        // return 1;
     }
     if (files[pos] == files[kingPos]) {
         testPin (board, pos, kingPos, color, VERTICAL_STEP, ROOK)
-        // return 1;
     }
     if (diagonals1[pos] == diagonals1[kingPos]) {
         testPin (board, pos, kingPos, color, VERTICAL_STEP + 1, BISHOP)
-        // return 1;
     }
     if (diagonals2[pos] == diagonals2[kingPos]) {
         testPin (board, pos, kingPos, color, VERTICAL_STEP - 1, BISHOP)
-        // return 1;
     }
     return 0;
 }
