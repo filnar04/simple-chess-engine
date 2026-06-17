@@ -1,3 +1,5 @@
+#pragma once
+
 #include "util.h"
 
 unsigned int searchMoves (uint8_t *board, struct gamestate gameState,

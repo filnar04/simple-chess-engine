@@ -1,14 +1,14 @@
-#include "util.h"
+#include "chess.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-const int8_t knightMoves[]
+static const int8_t knightMoves[]
     = { -WIDTH + 2, -WIDTH - 2, -2 * WIDTH + 1, -2 * WIDTH - 1,
         WIDTH - 2,  WIDTH + 2,  2 * WIDTH + 1,  2 * WIDTH - 1 };
-const int8_t bishopMoves[] = { -WIDTH + 1, WIDTH - 1, -WIDTH - 1, WIDTH + 1 };
-const int8_t rookMoves[] = { -1, 1, -WIDTH, WIDTH };
-const int8_t kingMoves[]
+static const int8_t bishopMoves[] = { -WIDTH + 1, WIDTH - 1, -WIDTH - 1, WIDTH + 1 };
+static const int8_t rookMoves[] = { -1, 1, -WIDTH, WIDTH };
+static const int8_t kingMoves[]
     = { -1, 1, -WIDTH + 1, WIDTH - 1, -WIDTH, WIDTH, -WIDTH - 1, WIDTH + 1 };
 
 int8_t
@@ -84,7 +84,7 @@ testCheck (uint8_t *board, int8_t pos, int8_t color)
         return 1;                                                             \
     return 0;
 
-int8_t
+static int8_t
 isPinned (uint8_t *board, int8_t pos, int8_t kingPos)
 {
     int8_t next, color = board[pos] & COLOR_MASK;
@@ -103,7 +103,7 @@ isPinned (uint8_t *board, int8_t pos, int8_t kingPos)
     return 0;
 }
 
-int8_t
+static int8_t
 findPawnMoves (uint8_t *board, struct gamestate gameState, int8_t pos,
                int8_t *list)
 {
@@ -138,7 +138,7 @@ findPawnMoves (uint8_t *board, struct gamestate gameState, int8_t pos,
     return moveCount;
 }
 
-int8_t
+static int8_t
 findKnightMoves (uint8_t *board, int8_t pos, int8_t color, int8_t *list)
 {
     int8_t moveCount = 0;
@@ -160,25 +160,25 @@ findKnightMoves (uint8_t *board, int8_t pos, int8_t color, int8_t *list)
     }                                                                         \
     return move_count
 
-int8_t
+static int8_t
 findBishopMoves (uint8_t *board, int8_t pos, int8_t color, int8_t *list)
 {
     findStraightMoves (bishopMoves, 4, pos, color, list);
 }
 
-int8_t
+static int8_t
 findRookMoves (uint8_t *board, int8_t pos, int8_t color, int8_t *list)
 {
     findStraightMoves (rookMoves, 4, pos, color, list);
 }
 
-int8_t
+static int8_t
 findQueenMoves (uint8_t *board, int8_t pos, int8_t color, int8_t *list)
 {
     findStraightMoves (kingMoves, 8, pos, color, list);
 }
 
-int8_t
+static int8_t
 testCastling (uint8_t *board, int8_t king, int8_t rook)
 {
     if ((board[rook] & (PIECE_TYPE | HAS_MOVED)) != ROOK) return 0;
@@ -193,7 +193,7 @@ testCastling (uint8_t *board, int8_t king, int8_t rook)
     return 1;
 }
 
-int8_t
+static int8_t
 findKingMoves (uint8_t *board, struct gamestate gameState, int8_t pos,
                int8_t *list)
 {
@@ -333,7 +333,7 @@ findPieceMoves (uint8_t *board, struct gamestate gameState, int8_t square,
     int8_t pinned = isPinned (board, square, kingPos);
     int8_t numLegal = 0;
     if (inCheck || pinned) {
-        for (int i = 0; i < numMoves; i++) {
+        for (uint i = 0; i < numMoves; i++) {
             if (type == PAWN && tempMoveList[i] == gameState.enpasssant) {
                 moveList[numLegal].end = tempMoveList[i];
                 moveList[numLegal].start = square;
@@ -425,7 +425,7 @@ getMoveArray (uint8_t *board, struct gamestate gameState, int8_t square,
     return moveNum;
 }
 
-uint8_t
+static uint8_t
 checkMaterial (uint8_t *board)
 {
     uint8_t knights[2] = { 0 }, bishops_light[2] = { 0 },

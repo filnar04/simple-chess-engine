@@ -9,7 +9,7 @@ int
 eval (uint8_t *board, struct gamestate *state)
 {
     if (state->halfmove >= 100) return 0;
-    constexpr int16_t pieceVal[] = { 0, 100, 310, 330, 500, 900, 0 };
+    static const int16_t pieceVal[] = { 0, 100, 310, 330, 500, 900, 0 };
     int8_t pawnsOnFileB[8] = { 0 };
     int8_t pawnsOnFileW[8] = { 0 };
     int8_t rooksOnFileB[8] = { 0 };
@@ -46,13 +46,15 @@ eval (uint8_t *board, struct gamestate *state)
                         rooksOnFileW[c]++;
                     break;
 
-                case BISHOP: // negative points for bishops acting like pawns
+                case BISHOP: { // negative points for bishops acting like pawns
                     int8_t front = VERTICAL_STEP;
                     if (isBlack) front = -VERTICAL_STEP;
                     if ((board[sq + front + 1] & PIECE_TYPE) == PAWN)
                         val[isBlack] += BLOCKED_BISHOP_MOD;
                     if ((board[sq + front - 1] & PIECE_TYPE) == PAWN)
                         val[isBlack] += BLOCKED_BISHOP_MOD;
+                } break;
+                default: __builtin_unreachable();
                 }
             }
         }
@@ -80,12 +82,12 @@ eval (uint8_t *board, struct gamestate *state)
 
 #define MAX_DEPTH 20
 
-void
+static void
 quicksort (struct move *A, int len)
 {
     if (len < 2) return;
 
-    uint32_t pivot = A[len / 2].priority;
+    int8_t pivot = A[len / 2].priority;
 
     int i, j;
     for (i = 0, j = len - 1;; i++, j--) {
@@ -105,7 +107,7 @@ quicksort (struct move *A, int len)
     quicksort (A + i, len - i);
 }
 
-int
+static int
 alphabetaSearch (int alpha, int beta, uint8_t *board, struct gamestate *state,
                  int depth)
 {
@@ -153,7 +155,7 @@ getBestMove (uint8_t *board, struct gamestate *state, uint maxdepth)
     while (depth <= maxdepth && clock () - startTime < MAX_TIME / 2) {
         int alpha = -MATE;
         int beta = MATE;
-        for (int i = 0; i < n; i++) {
+        for (uint i = 0; i < n; i++) {
             uint8_t nextBoard[BOARD_MEM_SIZE];
             memcpy (nextBoard, board, BOARD_MEM_SIZE);
             struct gamestate newState;
