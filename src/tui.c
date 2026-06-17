@@ -4,15 +4,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-typedef unsigned int uint;
-const char *const colors[] = { "48;2;128;64;0", "48;2;192;128;96",
+static const char *const colors[] = { "48;2;128;64;0", "48;2;192;128;96",
                                "48;2;0;128;64", "48;2;96;192;128" };
-const char *const pColors[] = { "1;38;2;16;16;16", "1;38;2;239;239;239" };
-char *nerdSym[]
+static const char *const pColors[] = { "1;38;2;16;16;16", "1;38;2;239;239;239" };
+static char *nerdSym[]
     = { " \0\0\0\0", "󰡙", "󰡘", "󰡜", "󰡛", "󰡚", "󰡗" };
-char *unicodeSym[] = { " \0", "♟", "♞", "♝", "♜", "♛", "♚" };
-char *asciiSym[] = { " ", "P", "N", "B", "R", "Q", "K" };
-char **symbols;
+static char *unicodeSym[] = { " \0", "♟", "♞", "♝", "♜", "♛", "♚" };
+static char *asciiSym[] = { " ", "P", "N", "B", "R", "Q", "K" };
+static char **symbols;
 
 int
 uiInit (int argc, char **argv)

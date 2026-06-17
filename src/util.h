@@ -13,7 +13,9 @@
 #define VERTICAL_STEP 10
 #define KNIGHT_MOVES 8
 
-enum pieces : int8_t { PAWN = 1, KNIGHT, BISHOP, ROOK, QUEEN, KING };
+typedef unsigned int uint;
+
+enum pieces { PAWN = 1, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 #define PIECE_TYPE 7
 #define COLOR_MASK 060
 #define WHITE 020

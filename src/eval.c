@@ -114,7 +114,7 @@ alphabetaSearch (int alpha, int beta, uint8_t *board, struct gamestate *state,
     if (depth <= 0) {
         return eval (board, state);
     }
-    struct move moves[256] = {};
+    struct move moves[256] = {0};
 
     int n = searchMoves (board, *state, moves);
     quicksort (moves, n);
