@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdint.h>
 
 #define MATE 1000000000
@@ -7,7 +9,7 @@
 #define OPEN_ROOK_MOD 30
 
 // clang-format off
-constexpr int16_t knightbonus[] = {
+static const int16_t knightbonus[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, -50, -40, -30, -30, -30, -30, -40, -50, 0,
@@ -22,7 +24,7 @@ constexpr int16_t knightbonus[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-constexpr int16_t kingW_bonus[] = {
+static const int16_t kingW_bonus[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 50, 50, 20, 0, 0, 20, 50, 50, 0,
@@ -37,7 +39,7 @@ constexpr int16_t kingW_bonus[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-constexpr int16_t kingB_bonus[] = {
+static const int16_t kingB_bonus[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, -100, -100, -100, -100, -100, -100, -100, -100, 0,

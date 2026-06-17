@@ -1,3 +1,5 @@
+#pragma once
+
 #include "util.h"
 #include <stdint.h>
 #include <stdlib.h>

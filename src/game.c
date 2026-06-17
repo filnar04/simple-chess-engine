@@ -18,7 +18,7 @@ static struct position *positionList;
 static uint posListLen = 128;
 static uint uniqPosCount = 0;
 
-int
+static int
 posEqual (struct position *a, struct position *b)
 {
     for (int i = 0; i < 8; i++) {
@@ -27,7 +27,7 @@ posEqual (struct position *a, struct position *b)
     return 1;
 }
 
-int
+static int
 addPosition (uint8_t *board)
 {
     struct position p;
@@ -35,7 +35,7 @@ addPosition (uint8_t *board)
          i += VERTICAL_STEP, j++) {
         p.boardState[j] = *(uint64_t *)(board + i);
     }
-    for (int i = 0; i < uniqPosCount; i++) {
+    for (uint i = 0; i < uniqPosCount; i++) {
         if (posEqual (&p, &positionList[i])) {
             positionList[i].repetitions += 1;
             return positionList[i].repetitions;
@@ -54,7 +54,7 @@ static uint8_t playerColor;
 static struct gamestate gameState;
 static uint8_t validMoves[64] = { 0 };
 
-void
+static void
 nextMove ()
 {
     if (gameState.turn == playerColor) {

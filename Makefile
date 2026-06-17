@@ -5,7 +5,7 @@ clean:
 	rm build/*
 
 build: 
-	mkdir build
+	mkdir -p build
 
 build/chess.o: src/chess.c
 	$(CC) -c $(FLAGS) -o build/chess.o src/chess.c

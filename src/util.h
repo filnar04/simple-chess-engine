@@ -13,6 +13,8 @@
 #define VERTICAL_STEP 10
 #define KNIGHT_MOVES 8
 
+typedef unsigned int uint;
+
 enum pieces { PAWN = 1, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 #define PIECE_TYPE 7
 #define COLOR_MASK 060
@@ -22,14 +24,14 @@ enum pieces { PAWN = 1, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 #define CLEAR_TYPE 0xf8
 
 struct move {
-    int8_t start;
-    int8_t end;
-    int8_t promotion;
+    int8_t start; //initial position
+    int8_t end; //target position
+    int8_t promotion; //piece to promote into
     int8_t priority;
 };
 
 struct gamestate {
-    int8_t turn;
+    int8_t turn; //either WHITE or BLACK
     int8_t kingW;
     int8_t kingB;
     int8_t shortcastle;
@@ -75,7 +77,7 @@ struct gamestate {
 #define LOGIC_TO_BOARD(x) ((x - FIRST_SQUARE) % 10 + 8 * ((x - FIRST_SQUARE)/ 10))
 
 // lookup tables
-constexpr int8_t ranks[120] = {
+static const int8_t ranks[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 1, 1, 1, 1, 1, 1, 1, 1, 0,
@@ -90,7 +92,7 @@ constexpr int8_t ranks[120] = {
    0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 }; 
 
-constexpr int8_t files[120] = {
+static const int8_t files[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 0,
@@ -104,7 +106,7 @@ constexpr int8_t files[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0,0,0,0, 0
 };
-constexpr int8_t diagonals1[120] = {
+static const int8_t diagonals1[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 8, 7, 6, 5, 4, 3, 2, 1, 0,
@@ -119,7 +121,7 @@ constexpr int8_t diagonals1[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
 }; 
-constexpr int8_t diagonals2[120] = {
+static const int8_t diagonals2[120] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 1, 2, 3, 4, 5, 6, 7, 8, 0,

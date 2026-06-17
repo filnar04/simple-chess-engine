@@ -1,3 +1,4 @@
+#include "fen.h"
 #include "util.h"
 #include <err.h>
 #include <stdio.h>
