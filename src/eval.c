@@ -54,6 +54,9 @@ eval (uint8_t *board, struct gamestate *state)
                     if ((board[sq + front - 1] & PIECE_TYPE) == PAWN)
                         val[isBlack] += BLOCKED_BISHOP_MOD;
                 } break;
+                case QUEEN:
+                case KING:
+                    break;
                 default: __builtin_unreachable();
                 }
             }
