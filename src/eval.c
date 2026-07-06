@@ -57,7 +57,8 @@ eval (uint8_t *board, struct gamestate *state)
                 case QUEEN:
                 case KING:
                     break;
-                default: __builtin_unreachable();
+                default:
+                    __builtin_unreachable ();
                 }
             }
         }
@@ -117,10 +118,9 @@ alphabetaSearch (int alpha, int beta, uint8_t *board, struct gamestate *state,
     if (depth <= 0) {
         return eval (board, state);
     }
-    struct move moves[256] = {0};
+    struct move moves[256] = { 0 };
 
     int n = searchMoves (board, *state, moves);
-    quicksort (moves, n);
     if (n == 0) {
         if (testCheck (board,
                        (state->turn == WHITE) ? state->kingW : state->kingB,
@@ -154,7 +154,6 @@ getBestMove (uint8_t *board, struct gamestate *state, uint maxdepth)
     uint bestmove = 0;
     uint startTime = clock ();
     uint depth = 2;
-    quicksort (moves, n);
     while (depth <= maxdepth && clock () - startTime < MAX_TIME / 2) {
         int alpha = -MATE;
         int beta = MATE;

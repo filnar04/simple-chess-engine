@@ -6,7 +6,8 @@
 static const int8_t knightMoves[]
     = { -WIDTH + 2, -WIDTH - 2, -2 * WIDTH + 1, -2 * WIDTH - 1,
         WIDTH - 2,  WIDTH + 2,  2 * WIDTH + 1,  2 * WIDTH - 1 };
-static const int8_t bishopMoves[] = { -WIDTH + 1, WIDTH - 1, -WIDTH - 1, WIDTH + 1 };
+static const int8_t bishopMoves[]
+    = { -WIDTH + 1, WIDTH - 1, -WIDTH - 1, WIDTH + 1 };
 static const int8_t rookMoves[] = { -1, 1, -WIDTH, WIDTH };
 static const int8_t kingMoves[]
     = { -1, 1, -WIDTH + 1, WIDTH - 1, -WIDTH, WIDTH, -WIDTH - 1, WIDTH + 1 };
@@ -370,15 +371,6 @@ searchMoves (uint8_t *board, struct gamestate gameState, struct move *moveList)
     int8_t attackerNum = testCheck (board, kingPos, gameState.turn);
     unsigned int moveCount = 0;
 
-    if (attackerNum > 1) {
-        // king attacked by 2 enemy pieces -> the king MUST move
-        int8_t kingMoveList[8];
-        int nmoves = findKingMoves (board, gameState, kingPos, kingMoveList);
-        for (int i = 0; i < nmoves; i++) {
-            moveList->end = kingMoveList[i];
-            moveList->start = kingPos;
-        }
-    }
     int8_t promotionRank
         = (gameState.turn == WHITE) ? WHITE_PROMOTION : BLACK_PROMOTION;
     for (int r = 1; r <= 8; r++) {
@@ -425,7 +417,7 @@ getMoveArray (uint8_t *board, struct gamestate gameState, int8_t square,
     return moveNum;
 }
 
-static uint8_t
+uint8_t
 checkMaterial (uint8_t *board)
 {
     uint8_t knights[2] = { 0 }, bishops_light[2] = { 0 },
