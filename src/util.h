@@ -24,14 +24,14 @@ enum pieces { PAWN = 1, KNIGHT, BISHOP, ROOK, QUEEN, KING };
 #define CLEAR_TYPE 0xf8
 
 struct move {
-    int8_t start; //initial position
-    int8_t end; //target position
-    int8_t promotion; //piece to promote into
+    int8_t start;     // initial position
+    int8_t end;       // target position
+    int8_t promotion; // piece to promote into
     int8_t priority;
 };
 
 struct gamestate {
-    int8_t turn; //either WHITE or BLACK
+    int8_t turn; // either WHITE or BLACK
     int8_t kingW;
     int8_t kingB;
     int8_t shortcastle;
@@ -73,8 +73,8 @@ struct gamestate {
     EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, EDGE, \
 }
 
-#define BOARD_TO_LOGIC(x) (x % 8 + FIRST_SQUARE + 10 * (x / 8))
-#define LOGIC_TO_BOARD(x) ((x - FIRST_SQUARE) % 10 + 8 * ((x - FIRST_SQUARE)/ 10))
+#define BOARD_TO_LOGIC(x) ((x) % 8 + FIRST_SQUARE + 10 * ((x) / 8))
+#define LOGIC_TO_BOARD(x) (((x) - FIRST_SQUARE) % 10 + 8 * (((x) - FIRST_SQUARE)/ 10))
 
 // lookup tables
 static const int8_t ranks[120] = {
