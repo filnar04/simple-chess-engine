@@ -1,19 +1,27 @@
 #include "chess.h"
 #include "ui.h"
 #include "util.h"
+#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
+
 static const char *const colors[] = { "48;2;128;64;0", "48;2;192;128;96",
-                               "48;2;0;128;64", "48;2;96;192;128" };
-static const char *const pColors[] = { "1;38;2;16;16;16", "1;38;2;239;239;239" };
+                                      "48;2;0;128;64", "48;2;96;192;128" };
+static const char *const pColors[]
+    = { "1;38;2;16;16;16", "1;38;2;239;239;239" };
 static char *nerdSym[]
     = { " \0\0\0\0", "󰡙", "󰡘", "󰡜", "󰡛", "󰡚", "󰡗" };
 static char *unicodeSym[] = { " \0", "♟", "♞", "♝", "♜", "♛", "♚" };
 static char *asciiSym[] = { " ", "P", "N", "B", "R", "Q", "K" };
 static char **symbols;
 
-int
+extern uint8_t board[BOARD_MEM_SIZE];
+extern struct gamestate gameState;
+extern int8_t playerColor;
+
+void
 uiInit (int argc, char **argv)
 {
     symbols = unicodeSym;
@@ -23,10 +31,10 @@ uiInit (int argc, char **argv)
         else if (strncmp (argv[i], "--ascii", 7) == 0)
             symbols = asciiSym;
     }
-    return 0;
+    gameLoop (NULL);
 }
 
-void
+static void
 showBoard (uint8_t *board, uint8_t *highlight, uint8_t side)
 {
     puts ("\033[2J");
@@ -56,7 +64,7 @@ showBoard (uint8_t *board, uint8_t *highlight, uint8_t side)
     puts ("\033[0m");
 }
 
-uint8_t
+static uint8_t
 uiSelectPiece (uint8_t *board, struct gamestate gameState, uint8_t moves[64])
 {
     char input[10];
@@ -77,7 +85,7 @@ uiSelectPiece (uint8_t *board, struct gamestate gameState, uint8_t moves[64])
     return square;
 }
 
-uint8_t
+static struct move
 uiMakeMove (uint8_t *board, struct gamestate *gameState, uint8_t *start,
             uint8_t moveArr[64])
 {
@@ -91,7 +99,7 @@ uiMakeMove (uint8_t *board, struct gamestate *gameState, uint8_t *start,
             *start = dest;
         else
             *start = 0;
-        return 0;
+        return (struct move){ 0, 0, 0, 0 };
     }
     struct move mv;
     mv.start = *start;
@@ -118,12 +126,43 @@ uiMakeMove (uint8_t *board, struct gamestate *gameState, uint8_t *start,
     } else {
         mv.promotion = 0;
     }
-    makeMove (board, gameState, playerColor, mv);
-    return 1;
+    return mv;
+}
+
+struct move
+getPlayerMove ()
+{
+    uint8_t moves[64] = { 0 };
+    showBoard (board, moves, playerColor);
+    while (1) {
+        uint8_t selected = 0;
+        while (selected == 0) {
+            bzero (moves, 64);
+            selected = uiSelectPiece (board, gameState, moves);
+        }
+        showBoard (board, moves, playerColor);
+        struct move m = uiMakeMove (board, &gameState, &selected, moves);
+        if (m.start != 0) {
+            // very dumb, will change later
+            bzero (moves, 64);
+            uint8_t nextboard[BOARD_MEM_SIZE];
+            memcpy (nextboard, board, BOARD_MEM_SIZE);
+            struct gamestate nextState = gameState;
+            makeMove (nextboard, &nextState, playerColor, m);
+            showBoard (nextboard, moves, playerColor);
+            return m;
+        }
+    }
 }
 
 void
-uiEnd (enum gameResult result)
+sendGameEvent (gameEventData *d)
+{
+    return;
+}
+
+void
+uiEnd (gameResult result)
 {
     switch (result) {
     case CHECKMATE_BLACK:

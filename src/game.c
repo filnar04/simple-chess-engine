@@ -2,12 +2,16 @@
 #include "eval.h"
 #include "ui.h"
 #include "util.h"
+#include <pthread.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <time.h>
 
-static uint8_t board[] = STARTING_POS;
+uint8_t board[] = STARTING_POS;
 
 struct position {
     uint64_t boardState[8];
@@ -50,63 +54,33 @@ addPosition (uint8_t *board)
     return 1;
 }
 
-static uint8_t playerColor;
-static struct gamestate gameState;
-static uint8_t validMoves[64] = { 0 };
+uint8_t playerColor;
+struct gamestate gameState;
 
 static void
 nextMove ()
 {
     if (gameState.turn == playerColor) {
-        uint8_t ok = 0;
-        uint8_t selected = 0;
-        while (ok == 0) {
-            while (selected == 0) {
-                bzero (validMoves, 64);
-                selected = uiSelectPiece (board, gameState, validMoves);
-                showBoard (board, validMoves, playerColor);
-            }
-            ok = uiMakeMove (board, &gameState, &selected, validMoves);
-            bzero (validMoves, 64);
-            if (!ok && selected) {
-                int8_t check
-                    = testCheck (board,
-                                 gameState.turn == WHITE ? gameState.kingW
-                                                         : gameState.kingB,
-                                 gameState.turn);
-                getMoveArray (board, gameState, selected, check, validMoves);
-            }
-            showBoard (board, validMoves, playerColor);
-        }
+        struct move m;
+        m = getPlayerMove ();
+        makeMove (board, &gameState, playerColor, m);
     } else {
         struct move best = getBestMove (board, &gameState, 20);
         makeMove (board, &gameState, gameState.turn, best);
-        showBoard (board, validMoves, playerColor);
+        gameEventData move_event;
+        move_event.type = EVENT_MOVE;
+        move_event.mov = best;
+        sendGameEvent (&move_event);
     }
 }
 
 int
-main (int argc, char **argv)
+gameLoop (void *)
 {
-    positionList = malloc (128 * sizeof (struct position));
-    if (time (0) % 2) // TODO: add color selection
-        playerColor = WHITE;
-    else
-        playerColor = BLACK;
-
-    gameState.turn = WHITE;
-    gameState.enpasssant = 0;
-    gameState.halfmove = 0;
-    gameState.kingB = 95;
-    gameState.kingW = 25;
-    gameState.longcastle = WHITE | BLACK;
-    gameState.shortcastle = WHITE | BLACK;
-
-    uiInit (argc, argv);
-    showBoard (board, validMoves, playerColor);
     struct move moveList[300];
-    enum gameResult result;
-    while (1) { // TODO: move UI to separate thread
+    gameResult result;
+
+    while (1) {
         bzero (moveList, 300);
         uint moveNum = searchMoves (board, gameState, moveList);
         if (moveNum == 0) {
@@ -128,10 +102,36 @@ main (int argc, char **argv)
         } else if (gameState.halfmove >= 100) {
             result = DRAW_50MOVE;
             break;
+        } else if (checkMaterial (board) == 0) {
+            result = DRAW_DEAD;
+            break;
         }
         gameState.turn ^= COLOR_MASK;
     }
-    uiEnd (result);
+    gameEventData game_end;
+    game_end.type = EVENT_END;
+    game_end.res = result;
+    sendGameEvent (&game_end);
+    return 0;
+}
+
+int
+main (int argc, char **argv)
+{
+    positionList = malloc (128 * sizeof (struct position));
+    if (time (0) % 2) // TODO: add color selection
+        playerColor = WHITE;
+    else
+        playerColor = BLACK;
+
+    gameState.turn = WHITE;
+    gameState.enpasssant = 0;
+    gameState.halfmove = 0;
+    gameState.kingB = 95;
+    gameState.kingW = 25;
+    gameState.longcastle = WHITE | BLACK;
+    gameState.shortcastle = WHITE | BLACK;
+    uiInit (argc, argv);
 
     free (positionList);
     exit (EXIT_SUCCESS);

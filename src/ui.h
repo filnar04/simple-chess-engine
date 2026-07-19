@@ -1,21 +1,39 @@
 #include "util.h"
 
-void showBoard (uint8_t *board, uint8_t *highlight, uint8_t side);
-int uiInit (int argc, char **argv);
-uint8_t uiSelectPiece (uint8_t *board, struct gamestate gameState,
-                       uint8_t moveArr[64]);
-uint8_t uiMakeMove (uint8_t *board, struct gamestate *gameState,
-                    uint8_t *selected, uint8_t moveArr[64]);
+void uiInit (int argc, char **argv);
 
-enum gameResult {
+struct uiInitData {
+    int argc;
+    char **argv;
+    int sockfd;
+};
+
+typedef enum {
     CHECKMATE_WHITE,
     CHECKMATE_BLACK,
     DRAW_STALEMATE,
     DRAW_DEAD,
     DRAW_REPETITION,
     DRAW_50MOVE
-};
-void uiEnd (enum gameResult result);
+} gameResult;
+
+typedef enum {
+    EVENT_MOVE,
+    EVENT_END,
+} gameEventType;
+
+typedef struct {
+    gameEventType type;
+    union {
+        struct move mov;
+        gameResult res;
+    };
+} gameEventData;
+
+int gameLoop (void *);
+void sendGameEvent (gameEventData *d);
+struct move getPlayerMove ();
+void uiEnd (gameResult result);
 
 #define SQ_LIGHT_R 192
 #define SQ_LIGHT_G 156

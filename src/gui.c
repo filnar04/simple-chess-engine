@@ -8,16 +8,20 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL_messagebox.h>
+#include <SDL3/SDL_mutex.h>
 #include <SDL3/SDL_oldnames.h>
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_surface.h>
+#include <SDL3/SDL_thread.h>
+#include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
-#include <time.h>
 
 #define MIN(X, Y) (X < Y) ? X : Y
 #define WINDOW_WIDTH 800
@@ -32,21 +36,28 @@ static SDL_Texture *textures[12] = { NULL };
 int squareSize = MIN (WINDOW_WIDTH, WINDOW_HEIGHT) / 8;
 #define TEXTURE_PATH "./gui/"
 
-struct gamestate gameState;
-int8_t playerColor = WHITE;
+extern uint8_t playerColor;
+struct move player_move;
 
-int
+uint32_t GAMEEVENT;
+
+static SDL_Thread *logic_thread;
+static SDL_Semaphore *mov_sem;
+
+static void uiLoop ();
+
+void
 uiInit (int argc, char *argv[])
 {
     if (!SDL_Init (SDL_INIT_VIDEO)) {
         SDL_Log ("Couldn't initialize SDL: %s", SDL_GetError ());
-        return SDL_APP_FAILURE;
+        exit (EXIT_FAILURE);
     }
     if (!SDL_CreateWindowAndRenderer ("test", WINDOW_WIDTH, WINDOW_HEIGHT,
                                       SDL_WINDOW_RESIZABLE, &window,
                                       &renderer)) {
         SDL_Log ("Couldn't create window or renderer: %s", SDL_GetError ());
-        return SDL_APP_FAILURE;
+        exit (EXIT_FAILURE);
     }
 
     SDL_Surface *surfaces[12] = { 0 };
@@ -66,25 +77,53 @@ uiInit (int argc, char *argv[])
         surfaces[i] = SDL_LoadPNG (png_path);
         if (!surfaces[i]) {
             SDL_Log ("Couldn't load png: %s", SDL_GetError ());
-            return SDL_APP_FAILURE;
+            exit (EXIT_FAILURE);
         }
         SDL_free (png_path);
         textures[i] = SDL_CreateTextureFromSurface (renderer, surfaces[i]);
         if (!textures[i]) {
             SDL_Log ("Couldn't create static texture: %s", SDL_GetError ());
-            return SDL_APP_FAILURE;
+            exit (EXIT_FAILURE);
         }
         SDL_DestroySurface (surfaces[i]);
     }
 
-    playerColor = (time (0) % 2) ? WHITE : BLACK;
-    return SDL_APP_CONTINUE;
+    SDL_SetEventEnabled (SDL_EVENT_MOUSE_MOTION, 0);
+
+    GAMEEVENT = SDL_RegisterEvents (1);
+    mov_sem = SDL_CreateSemaphore (0);
+
+    logic_thread = SDL_CreateThread (gameLoop, "logic_thread", NULL);
+    if (logic_thread == NULL) {
+        puts (SDL_GetError ());
+        exit (EXIT_FAILURE);
+    }
+    uiLoop ();
+}
+
+void
+sendGameEvent (gameEventData *data)
+{
+    SDL_Event event;
+    SDL_zero (event);
+    event.type = GAMEEVENT;
+    event.user.timestamp = SDL_GetTicksNS ();
+    event.user.data1 = malloc (sizeof (gameEventData));
+    memcpy (event.user.data1, data, sizeof (gameEventData));
+    SDL_PushEvent (&event);
+}
+
+struct move
+getPlayerMove ()
+{
+    SDL_WaitSemaphore (mov_sem);
+    return player_move;
 }
 
 int8_t check = 0;
 int8_t highlightSquare = -1;
 
-void
+static void
 showBoard (uint8_t *board, uint8_t *highlight, uint8_t side)
 {
     SDL_FRect rect;
@@ -135,7 +174,7 @@ showBoard (uint8_t *board, uint8_t *highlight, uint8_t side)
     }
     SDL_RenderPresent (renderer);
 }
-void
+static void
 handleEvent (SDL_Event e)
 {
     if (e.type == SDL_EVENT_QUIT) {
@@ -144,7 +183,7 @@ handleEvent (SDL_Event e)
     return;
 }
 
-uint8_t
+static uint8_t
 pawnPromotion (int8_t squareCol, int8_t color)
 {
     SDL_SetRenderDrawColor (renderer, 0xff, 0xff, 0xff, SDL_ALPHA_OPAQUE);
@@ -164,7 +203,7 @@ pawnPromotion (int8_t squareCol, int8_t color)
         do {
             SDL_WaitEvent (&e);
             handleEvent (e);
-        } while (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN);
+        } while (e.type != SDL_EVENT_MOUSE_BUTTON_DOWN);
 
         SDL_ConvertEventToRenderCoordinates (renderer, &e);
         switch ((int)e.button.y / squareSize) {
@@ -182,7 +221,7 @@ pawnPromotion (int8_t squareCol, int8_t color)
     }
 }
 
-int8_t
+static int8_t
 getClickedSquare (SDL_Event event, uint8_t side)
 {
     SDL_ConvertEventToRenderCoordinates (renderer, &event);
@@ -195,16 +234,11 @@ getClickedSquare (SDL_Event event, uint8_t side)
     return square;
 }
 
-uint8_t
-uiSelectPiece (uint8_t *board, struct gamestate gameState, uint8_t moveArr[64])
+static uint8_t
+uiSelectPiece (SDL_Event clickEvent, uint8_t *board,
+               struct gamestate gameState, uint8_t moveArr[64])
 {
-    SDL_Event event;
-    do {
-        SDL_WaitEvent (&event);
-        handleEvent (event);
-    } while (event.type != SDL_EVENT_MOUSE_BUTTON_DOWN);
-
-    int8_t square = getClickedSquare (event, gameState.turn);
+    int8_t square = getClickedSquare (clickEvent, gameState.turn);
     if (square < 0) return 0;
     uint8_t logicSquare = BOARD_TO_LOGIC (square);
     uint8_t piece = board[logicSquare];
@@ -218,20 +252,17 @@ uiSelectPiece (uint8_t *board, struct gamestate gameState, uint8_t moveArr[64])
     return logicSquare;
 }
 
-uint8_t
-uiMakeMove (uint8_t *board, struct gamestate *gameState, uint8_t *selected,
-            uint8_t moveArr[64])
-{
-    SDL_Event event;
-    do {
-        SDL_WaitEvent (&event);
-        handleEvent (event);
-    } while (event.type != SDL_EVENT_MOUSE_BUTTON_DOWN);
+#define SUCCESS 1
+#define FAIL 0
 
-    int8_t square = getClickedSquare (event, gameState->turn);
+static uint8_t
+uiMakeMove (SDL_Event *event, uint8_t *board, struct gamestate *gameState,
+            uint8_t *selected, uint8_t moveArr[64])
+{
+    int8_t square = getClickedSquare (*event, gameState->turn);
     if (square < 0) {
-        return 0;
         *selected = 0;
+        return FAIL;
     }
     if (moveArr[square]) {
         struct move m;
@@ -246,7 +277,11 @@ uiMakeMove (uint8_t *board, struct gamestate *gameState, uint8_t *selected,
         }
         m.promotion = p;
         makeMove (board, gameState, gameState->turn, m);
-        return 1;
+        gameState->turn ^= COLOR_MASK;
+        player_move = m;
+        SDL_SignalSemaphore (mov_sem);
+        *selected = 0;
+        return SUCCESS;
     }
     uint8_t logicSquare = BOARD_TO_LOGIC (square);
     if (board[logicSquare] & gameState->turn) {
@@ -254,12 +289,84 @@ uiMakeMove (uint8_t *board, struct gamestate *gameState, uint8_t *selected,
     } else {
         *selected = 0;
     }
-    return 0;
+    return FAIL;
+}
+
+static void
+uiLoop ()
+{
+    uint8_t board[] = STARTING_POS;
+    struct gamestate gameState
+        = { WHITE, 25, 95, WHITE | BLACK, WHITE | BLACK, 0, 0 };
+    uint8_t highlight[64] = { 0 };
+    uint8_t inCheck = 0;
+    uint8_t selected_square = 0;
+    gameResult result;
+    while (1) {
+        showBoard (board, highlight, playerColor);
+        SDL_Event e;
+        SDL_WaitEvent (&e);
+        if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            if (selected_square == 0) {
+                selected_square
+                    = uiSelectPiece (e, board, gameState, highlight);
+            } else {
+                uiMakeMove (&e, board, &gameState, &selected_square,
+                            highlight);
+                bzero (highlight, 64);
+                if (selected_square) {
+                    getMoveArray (board, gameState, selected_square, inCheck,
+                                  highlight);
+                }
+            }
+        } else if (e.type == GAMEEVENT) {
+            gameEventData *event = e.user.data1;
+            if (event->type == EVENT_MOVE) {
+                makeMove (board, &gameState, gameState.turn, event->mov);
+                gameState.turn ^= COLOR_MASK;
+                inCheck = testCheck (board,
+                                     playerColor == WHITE ? gameState.kingW
+                                                          : gameState.kingB,
+                                     playerColor);
+            } else {
+                result = event->res;
+                break;
+            }
+        } else if (e.type == SDL_EVENT_QUIT)
+            exit (EXIT_SUCCESS);
+    }
+    uiEnd (result);
 }
 
 void
-uiEnd (enum gameResult result)
+uiStart ()
 {
+}
+
+void
+uiEnd (gameResult result)
+{
+    // placeholder
+    switch (result) {
+    case CHECKMATE_BLACK:
+        puts ("Black won by checkmate.");
+        break;
+    case CHECKMATE_WHITE:
+        puts ("White won by checkamte.");
+        break;
+    case DRAW_STALEMATE:
+        puts ("The game ended in draw by stalemate.");
+        break;
+    case DRAW_50MOVE:
+        puts ("The game ended in draw by 50 move rule.");
+        break;
+    case DRAW_REPETITION:
+        puts ("The game ended in draw by repetition.");
+        break;
+    case DRAW_DEAD:
+        puts ("The game ended in draw by insufficient material.");
+        break;
+    }
     SDL_Event e;
     while (1) {
         SDL_WaitEvent (&e);
