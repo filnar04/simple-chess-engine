@@ -4,7 +4,6 @@
 #include "util.h"
 #include <string.h>
 #include <time.h>
-#include <stdio.h>
 
 int
 eval (uint8_t *board, struct gamestate *state)
@@ -84,7 +83,7 @@ eval (uint8_t *board, struct gamestate *state)
         if (rooksOnFileW[i]) {
             if (pawnsOnFileW[i] == 0) {
                 val[0] += SEMI_OPEN_ROOK_MOD * rooksOnFileW[i];
-                if (pawnsOnFileW[i] == 0)
+                if (pawnsOnFileB[i] == 0)
                     val[0] += OPEN_ROOK_MOD * rooksOnFileW[i];
             }
         }
