@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#define MATE 1000000000
+#define MATE 0x7fff
 #define DOUBLE_PAWN_MOD -30
 #define BLOCKED_BISHOP_MOD -20
 #define SEMI_OPEN_ROOK_MOD 20

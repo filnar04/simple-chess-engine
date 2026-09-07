@@ -4,6 +4,7 @@
 #include "util.h"
 #include <string.h>
 #include <time.h>
+#include <stdio.h>
 
 int
 eval (uint8_t *board, struct gamestate *state)
@@ -16,6 +17,7 @@ eval (uint8_t *board, struct gamestate *state)
     int8_t rooksOnFileW[8] = { 0 };
     int val[2] = { 0 };
 
+    int numPieces = 0;
     for (int r = 0; r < 8; r++)
         for (int c = 0; c < 8; c++) {
             int sq = FIRST_SQUARE + VERTICAL_STEP * r + c;
@@ -25,6 +27,7 @@ eval (uint8_t *board, struct gamestate *state)
                 val[isBlack] += p;
                 switch (board[sq] & PIECE_TYPE) {
                 case KNIGHT:
+                    numPieces++;
                     val[isBlack] += knightbonus[sq];
                     break;
                 case PAWN:
@@ -40,6 +43,7 @@ eval (uint8_t *board, struct gamestate *state)
                     break;
 
                 case ROOK:
+                    numPieces++;
                     if (isBlack)
                         rooksOnFileB[c]++;
                     else
@@ -47,6 +51,7 @@ eval (uint8_t *board, struct gamestate *state)
                     break;
 
                 case BISHOP: { // negative points for bishops acting like pawns
+                    numPieces++;
                     int8_t front = VERTICAL_STEP;
                     if (isBlack) front = -VERTICAL_STEP;
                     if ((board[sq + front + 1] & PIECE_TYPE) == PAWN)
@@ -55,6 +60,8 @@ eval (uint8_t *board, struct gamestate *state)
                         val[isBlack] += BLOCKED_BISHOP_MOD;
                 } break;
                 case QUEEN:
+                    numPieces++;
+                    break;
                 case KING:
                     break;
                 default:
@@ -62,6 +69,10 @@ eval (uint8_t *board, struct gamestate *state)
                 }
             }
         }
+    if (numPieces > 5) {
+       val[0] += kingW_bonus[state->kingW];
+       val[1] += kingB_bonus[state->kingB];
+    }
     for (int i = 0; i < 8; i++) {
         if (rooksOnFileB[i]) {
             if (pawnsOnFileB[i] == 0) {
