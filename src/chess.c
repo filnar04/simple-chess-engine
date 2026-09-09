@@ -1,4 +1,5 @@
 #include "chess.h"
+#include "util.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -363,6 +364,8 @@ findPieceMoves (uint8_t *board, struct gamestate gameState, int8_t square,
     return numLegal;
 }
 
+static const int8_t piecePriority[] = {0, 5, 15, 15, 25, 45, 50};
+
 unsigned int
 searchMoves (uint8_t *board, struct gamestate gameState, struct move *moveList)
 {
@@ -383,6 +386,14 @@ searchMoves (uint8_t *board, struct gamestate gameState, struct move *moveList)
 
             numMoves = findPieceMoves (board, gameState, square, attackerNum,
                                        currMoveList);
+            for (int i = 0; i < numMoves; i++) {
+                uint8_t target = board[currMoveList[i].end];
+                if (target != 0) {
+                    currMoveList[i].priority = 50 + piecePriority[target & PIECE_TYPE] - piecePriority[piece & PIECE_TYPE];
+                } else {
+                    currMoveList[i].priority = 0;
+                }
+            }
             if (numMoves == 0) continue;
             if ((piece & PIECE_TYPE) == PAWN
                 && ranks[currMoveList[0].end] == promotionRank) {
@@ -390,6 +401,7 @@ searchMoves (uint8_t *board, struct gamestate gameState, struct move *moveList)
                     currMoveList[i * 4].start = currMoveList[i].start;
                     currMoveList[i * 4].end = currMoveList[i].end;
                     currMoveList[i * 4].promotion = QUEEN;
+                    currMoveList[i * 4].priority = 100;
                     for (int j = 1; j <= 3; j++) {
                         currMoveList[i * 4 + j].promotion = PAWN + j;
                         currMoveList[i * 4 + j].end = currMoveList[i].end;

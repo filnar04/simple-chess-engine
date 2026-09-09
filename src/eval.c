@@ -139,6 +139,7 @@ alphabetaSearch (int alpha, int beta, uint8_t *board, struct gamestate *state,
         }
         return 0;
     }
+    quicksort(moves, n);
     for (int i = 0; i < n; i++) {
         uint8_t nextBoard[BOARD_MEM_SIZE];
         memcpy (nextBoard, board, BOARD_MEM_SIZE);
@@ -164,6 +165,7 @@ getBestMove (uint8_t *board, struct gamestate *state, uint maxdepth)
     uint bestmove = 0;
     uint startTime = clock ();
     uint depth = 2;
+    quicksort(moves, n);
     while (depth <= maxdepth && clock () - startTime < MAX_TIME / 2) {
         int alpha = -MATE;
         int beta = MATE;
