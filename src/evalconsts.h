@@ -5,9 +5,9 @@
 #define MATE 0x7fff
 #define DOUBLE_PAWN_MOD -30
 #define BLOCKED_BISHOP_MOD -20
-#define SEMI_OPEN_ROOK_MOD 20
-#define OPEN_ROOK_MOD 30
-
+#define SEMI_OPEN_ROOK_MOD 5
+#define OPEN_ROOK_MOD 20
+#define CENTER_PAWN_MOD 20
 // clang-format off
 static const int16_t knightbonus[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

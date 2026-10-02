@@ -2,6 +2,7 @@
 #include "chess.h"
 #include "evalconsts.h"
 #include "util.h"
+#include <stdint.h>
 #include <string.h>
 #include <time.h>
 
@@ -30,14 +31,15 @@ eval (uint8_t *board, struct gamestate *state)
                     val[isBlack] += knightbonus[sq];
                     break;
                 case PAWN:
+                    int16_t centerbonus = (sq == 54 || sq == 55 || sq == 64 || sq == 65) ? CENTER_PAWN_MOD : 0;
                     if (isBlack) {
                         if (pawnsOnFileB[c]) val[1] += DOUBLE_PAWN_MOD;
                         pawnsOnFileB[c]++;
-                        val[1] += (7 - r) * 3;
+                        val[1] += (7 - r) * 3 + centerbonus;
                     } else {
                         if (pawnsOnFileW[c]) val[0] += DOUBLE_PAWN_MOD;
                         pawnsOnFileW[c]++;
-                        val[0] += (r) * 3;
+                        val[0] += (r) * 3 + centerbonus;
                     }
                     break;
 
