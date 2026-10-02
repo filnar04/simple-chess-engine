@@ -307,6 +307,7 @@ uiLoop ()
         SDL_Event e;
         SDL_WaitEvent (&e);
         if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            if (gameState.turn != playerColor) continue;
             if (selected_square == 0) {
                 selected_square
                     = uiSelectPiece (e, board, gameState, highlight);
